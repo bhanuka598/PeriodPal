@@ -1,8 +1,8 @@
-# 🌸 PeriodPal – Menstrual Health Manager (Backend API)
+# 🌸 PeriodPal – Menstrual Health Manager
 
-PeriodPal is a RESTful backend system designed to reduce period poverty by connecting marginalized women with free sanitary products, menstrual health tracking, and NGO support under the concept of Menstrual Equity.
+PeriodPal is a RESTful backend system designed to reduce period poverty by connecting marginalised women with free sanitary products, menstrual health tracking, and NGO support under the concept of Menstrual Equity.
 
-This backend is developed using **Node.js, Express.js, and MongoDB** as part of the SE3040 – Application Frameworks assignment.
+This backend is developed using **Node.js, Express.js, and MongoDB** as part of the Application Frameworks assignment.
 
 ---
 
@@ -17,7 +17,7 @@ This backend is developed using **Node.js, Express.js, and MongoDB** as part of 
 
 ---
 
-## 📌 Core Components (CRUD Based)
+## 📌 Core Components
 
 1. User Management (Admin, Beneficiary, NGO, Donor)
 2. Menstrual Records Management
