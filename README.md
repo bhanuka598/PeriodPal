@@ -52,17 +52,23 @@ cd periodpal
 
 ### 2️⃣ Install dependencies
 
+```
 npm install
+```
 
 ### 3️⃣ Create .env file
 
+```
 PORT=5000
 MONGO_URI=your_mongodb_connection
 JWT_SECRET=your_secret_key
+```
 
 ### 4️⃣ Run the server
 
+```
 npm run dev
+```
 
 Server will run on:
 http://localhost:5000
