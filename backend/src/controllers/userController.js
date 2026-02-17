@@ -1,66 +1,102 @@
 import User from "../models/User.js";
-
+import asyncHandler from "express-async-handler";
+import generateToken from "../utils/generateToken.js";
 
 // ================= GET ALL USERS (ADMIN) =================
-export const getAllUsers = async (req, res) => {
-    try {
-        const users = await User.find().select("-password");
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
+export const getAllUsers = asyncHandler(async (req, res) => {
+    const users = await User.find().select("-password");
+    res.json(users);
+});
 
 // ================= GET PROFILE =================
-export const getUserProfile = async (req, res) => {
-    res.json(req.user); // already attached from protect middleware
-};
-
+export const getUserProfile = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).select("-password");
+    if (user) {
+        res.json(user);
+    } else {
+        res.status(404);
+        throw new Error("User not found");
+    }
+});
 
 // ================= UPDATE PROFILE =================
-export const updateUserProfile = async (req, res) => {
-    try {
-        const user = await User.findById(req.user._id);
+export const updateUserProfile = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
 
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
+    if (user) {
+        // Update basic fields
+        user.username = req.body.username || user.username;
         user.email = req.body.email || user.email;
+        user.avatar = req.body.avatar || user.avatar;
+        user.location = req.body.location || user.location;
+        user.phone = req.body.phone || user.phone;
+        user.bio = req.body.bio || user.bio;
 
-        if (req.body.password) {
-            user.password = req.body.password; // will auto-hash
+        // Update role if provided and user is admin
+        if (req.body.role) {
+            if (req.user.role === 'admin') {
+                user.role = req.body.role;
+            } else {
+                res.status(403);
+                throw new Error('Not authorized to update role');
+            }
+        }
+    
+        // Update eligibleForSupport if provided
+        if (req.body.eligibleForSupport !== undefined) {
+            if (req.user.role === 'admin') {
+                user.eligibleForSupport = req.body.eligibleForSupport;
+            } else {
+                res.status(403);
+                throw new Error('Not authorized to update support eligibility');
+            }
+        }
+        
+        // Handle password update if provided
+        if (req.body.currentPassword && req.body.newPassword) {
+            if (user.googleId && !user.password) {
+                // For Google-authenticated users without a password
+                user.password = req.body.newPassword;
+            } else {
+                // For regular users, verify current password
+                const isMatch = await user.matchPassword(req.body.currentPassword);
+                if (!isMatch) {
+                    res.status(401);
+                    throw new Error('Current password is incorrect');
+                }
+                user.password = req.body.newPassword;
+            }
         }
 
         const updatedUser = await user.save();
 
         res.json({
             _id: updatedUser._id,
+            username: updatedUser.username,
             email: updatedUser.email,
-            role: updatedUser.role
+            role: updatedUser.role,
+            avatar: updatedUser.avatar,
+            location: updatedUser.location,
+            phone: updatedUser.phone,
+            bio: updatedUser.bio,
+            isVerified: updatedUser.isVerified,
+            token: generateToken(updatedUser._id)
         });
-
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    } else {
+        res.status(404);
+        throw new Error('User not found');
     }
-};
-
+});
 
 // ================= DELETE USER (ADMIN) =================
-export const deleteUser = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        await user.deleteOne();
-
-        res.json({ message: "User removed successfully" });
-
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+export const deleteUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id);
+    
+    if (user) {
+        await user.remove();
+        res.json({ message: 'User removed' });
+    } else {
+        res.status(404);
+        throw new Error('User not found');
     }
-};
+});

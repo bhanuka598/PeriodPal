@@ -6,10 +6,34 @@ import {
     updateUserProfile,
     deleteUser
 } from "../controllers/userController.js";
-
+import passport from "passport";
+import generateToken from "../utils/generateToken.js";
 import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+
+// Redirect to Google
+router.get(
+    "/google",
+    passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+// Google callback
+router.get(
+    "/google/callback",
+    passport.authenticate("google", { session: false }),
+    (req, res) => {
+        const token = generateToken(req.user._id);
+
+        res.json({
+            _id: req.user._id,
+            email: req.user.email,
+            role: req.user.role,
+            token
+        });
+    }
+);
 
 
 // ================= AUTH ROUTES =================

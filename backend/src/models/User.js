@@ -3,21 +3,45 @@ import bcrypt from "bcrypt";
 
 const userSchema = new mongoose.Schema(
     {
-        username: {type: String, required: true},
-        email: {type: String, required: true, unique: true},
-        password: {type: String, required: true},
-        role: ["beneficiary", "admin", "ngo", "donor", "healthOfficer"],
-        location: {type: String, required: true},
-        eligibileForSupport: {type: Boolean}
+        username: { type: String, required: function() { return !this.googleId } },
+        email: { 
+            type: String, 
+            required: true, 
+            unique: true,
+            lowercase: true,
+            trim: true
+        },
+        password: { 
+            type: String, 
+            required: function() { return !this.googleId } 
+        },
+        googleId: { type: String, unique: true, sparse: true },
+        role: { 
+            type: String, 
+            enum: ["beneficiary", "admin", "ngo", "donor", "healthOfficer"],
+            default: "beneficiary"
+        },
+        location: { type: String },
+        eligibileForSupport: { type: Boolean, default: false },
+        avatar: { type: String },
+        isVerified: { type: Boolean, default: false }
     },
-    {timestamps: true}
+    { 
+        timestamps: true,
+        toJSON: {
+            transform: function(doc, ret) {
+                delete ret.password;
+                return ret;
+            }
+        }
+    }
 );
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {
     try {
-        // Only hash the password if it has been modified (or is new)
-        if (!this.isModified("password")) {
+        // Only hash the password if it has been modified (or is new) and not using Google OAuth
+        if (!this.isModified("password") || this.googleId) {
             if (typeof next === 'function') return next();
             return;
         }
