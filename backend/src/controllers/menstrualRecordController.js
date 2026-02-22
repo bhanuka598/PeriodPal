@@ -1,6 +1,8 @@
 const MenstrualRecord = require("../models/MenstrualRecord");
 const mongoose = require("mongoose");
 
+const transporter = require("../utils/emailService");
+
 // POST /api/records
 exports.createRecord = async (req, res) => {
   try {
@@ -107,5 +109,58 @@ exports.deleteRecord = async (req, res) => {
     res.status(200).json({ message: "Record deleted" });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// POST /api/records/:id/send-email (Third-party Feature: Nodemailer)
+exports.sendReminderEmail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { toEmail } = req.body;
+
+    if (!toEmail) {
+      return res.status(400).json({ message: "toEmail is required" });
+    }
+
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      return res.status(500).json({
+        message: "Email service not configured. Check EMAIL_USER and EMAIL_PASS in .env",
+      });
+    }
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid record id" });
+    }
+
+    const record = await MenstrualRecord.findById(id);
+    if (!record) return res.status(404).json({ message: "Record not found" });
+
+    // Predict next period date
+    const last = new Date(record.lastPeriodDate);
+    const next = new Date(last);
+    next.setDate(next.getDate() + Number(record.cycleLength));
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: toEmail,
+      subject: "PeriodPal Reminder",
+      text: `PeriodPal Reminder: Your next period is expected around ${next.toDateString()}.`,
+      html: `
+        <h2>PeriodPal Reminder</h2>
+        <p>Your next period is expected around:</p>
+        <h3>${next.toDateString()}</h3>
+        <p><strong>Cycle length:</strong> ${record.cycleLength} days</p>
+        <p><strong>Notes:</strong> ${record.notes || "-"}</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.status(200).json({
+      message: "Reminder email sent successfully",
+      predictedNextPeriod: next,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: "Email sending failed", error: err.message });
   }
 };

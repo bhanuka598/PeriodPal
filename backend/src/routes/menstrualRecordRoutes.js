@@ -7,10 +7,13 @@ const {
   getRecordById,
   updateRecord,
   deleteRecord,
+  sendReminderEmail,
 } = require("../controllers/menstrualRecordController");
 
 // Create
 router.post("/", createRecord);
+
+router.post("/:id/send-email",sendReminderEmail);
 
 // Read all
 router.get("/", getAllRecords);
