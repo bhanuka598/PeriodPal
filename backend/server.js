@@ -15,6 +15,9 @@ app.get("/", (req, res) => {
   res.send("PeriodPal API is running...");
 });
 
+//menstrual routes
+app.use("/api/records", require("./src/routes/menstrualRecordRoutes"));
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () =>
