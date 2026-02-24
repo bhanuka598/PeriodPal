@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Cart = require("../models/Cart");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
@@ -86,11 +87,86 @@ exports.getAllOrders = asyncHandler(async (req, res) => {
   res.json({ success: true, orders, count: orders.length });
 });
 
-// GET /api/orders/:orderId
-exports.getOrderById = asyncHandler(async (req, res) => {
-  const userId = getUserId(req);
-  const order = await Order.findOne({ _id: req.params.orderId, userId });
-  if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+// GET /api/orders/:id  (Get order by ID)
+exports.getOrderById = async (req, res) => {
+  try {
+    const { orderId } = req.params; // ✅ match route param
 
-  res.json({ success: true, order });
-});
+    if (!mongoose.isValidObjectId(orderId)) {
+      return res.status(400).json({ success: false, message: "Invalid order id" });
+    }
+
+    const order = await Order.findById(orderId).populate("items.productId");
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    return res.status(200).json({ success: true, order });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
+
+
+
+// DELETE /api/orders/:id  (Delete order)
+exports.deleteOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    if (!mongoose.isValidObjectId(orderId)) {
+      return res.status(400).json({ success: false, message: "Invalid order id" });
+    }
+
+    const deleted = await Order.findByIdAndDelete(orderId);
+
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    return res.status(200).json({ success: true, message: "Order deleted", order: deleted });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
+
+
+// PUT /api/orders/:orderId  (Update order)
+exports.updateOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    if (!mongoose.isValidObjectId(orderId)) {
+      return res.status(400).json({ success: false, message: "Invalid order id" });
+    }
+
+    // Map allowed fields to YOUR schema fields
+    const updates = {};
+
+    // orderStatus in schema (PENDING/PAID/FAILED)
+    if (req.body.orderStatus !== undefined) updates.orderStatus = req.body.orderStatus;
+
+    // payment is an object in schema: payment.status, payment.method, payment.transactionId
+    if (req.body.payment !== undefined) updates.payment = req.body.payment;
+
+    // contactInfo exists in schema
+    if (req.body.contactInfo !== undefined) updates.contactInfo = req.body.contactInfo;
+
+    // If you want to allow updating items (optional)
+    if (req.body.items !== undefined) updates.items = req.body.items;
+
+    const updated = await Order.findByIdAndUpdate(orderId, updates, {
+      new: true,
+      runValidators: true,
+    }).populate("items.productId");
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    return res.status(200).json({ success: true, message: "Order updated", order: updated });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
