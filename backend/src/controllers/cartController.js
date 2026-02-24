@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const asyncHandler = require("../utils/asyncHandler");
@@ -62,48 +63,95 @@ exports.addToCart = asyncHandler(async (req, res) => {
   res.json({ success: true, cart: populated });
 });
 
-// PATCH /api/cart/items/:itemId { qty }
-exports.updateCartItem = asyncHandler(async (req, res) => {
-  const userId = getUserId(req);
-  const { qty } = req.body;
-  const quantity = Number(qty);
+// GET /api/carts/:id  (Get cart by ID)
+exports.getCartById = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  if (!quantity || quantity < 1) {
-    return res.status(400).json({ success: false, message: "Qty must be >= 1" });
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: "Invalid cart id" });
+    }
+
+    const cart = await Cart.findById(id).populate("items.productId");
+    if (!cart) {
+      return res.status(404).json({ success: false, message: "Cart not found" });
+    }
+
+    return res.status(200).json({ success: true, cart });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
   }
+};
 
-  const cart = await Cart.findOne({ userId, status: "ACTIVE" });
-  if (!cart) return res.status(404).json({ success: false, message: "Cart not found" });
+// PUT /api/carts/:id  (Update cart)
+// You can update items array + status (safe fields only)
+exports.updateCart = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  const item = cart.items.id(req.params.itemId);
-  if (!item) return res.status(404).json({ success: false, message: "Item not found" });
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: "Invalid cart id" });
+    }
 
-  const product = await Product.findById(item.productId);
-  if (!product) return res.status(404).json({ success: false, message: "Product not found" });
-  if (product.stockQty < quantity) return res.status(400).json({ success: false, message: "Not enough stock" });
+    const allowedFields = ["items", "status"];
+    const updates = {};
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) updates[key] = req.body[key];
+    }
 
-  item.qty = quantity;
-  await cart.save();
+    // Optional: validate items manually (helps avoid bad payloads)
+    if (updates.items) {
+      if (!Array.isArray(updates.items)) {
+        return res.status(400).json({ success: false, message: "items must be an array" });
+      }
 
-  const populated = await cart.populate("items.productId");
-  res.json({ success: true, cart: populated });
-});
+      for (const item of updates.items) {
+        if (!item.productId || !mongoose.isValidObjectId(item.productId)) {
+          return res.status(400).json({ success: false, message: "Invalid productId in items" });
+        }
+        if (item.qty === undefined || Number(item.qty) < 1) {
+          return res.status(400).json({ success: false, message: "qty must be >= 1" });
+        }
+        if (item.priceAtTime === undefined || Number(item.priceAtTime) < 0) {
+          return res.status(400).json({ success: false, message: "priceAtTime must be >= 0" });
+        }
+      }
+    }
 
-// DELETE /api/cart/items/:itemId
-exports.removeCartItem = asyncHandler(async (req, res) => {
-  const userId = getUserId(req);
-  const cart = await Cart.findOne({ userId, status: "ACTIVE" });
-  if (!cart) return res.status(404).json({ success: false, message: "Cart not found" });
+    const updated = await Cart.findByIdAndUpdate(id, updates, {
+      new: true,
+      runValidators: true,
+    }).populate("items.productId");
 
-  const item = cart.items.id(req.params.itemId);
-  if (!item) return res.status(404).json({ success: false, message: "Item not found" });
+    if (!updated) {
+      return res.status(404).json({ success: false, message: "Cart not found" });
+    }
 
-  item.deleteOne();
-  await cart.save();
+    return res.status(200).json({ success: true, message: "Cart updated", cart: updated });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
 
-  const populated = await cart.populate("items.productId");
-  res.json({ success: true, cart: populated });
-});
+// DELETE /api/carts/:id  (Delete cart)
+exports.deleteCart = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: "Invalid cart id" });
+    }
+
+    const deleted = await Cart.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Cart not found" });
+    }
+
+    return res.status(200).json({ success: true, message: "Cart deleted", cart: deleted });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
 
 // GET /api/cart/summary
 exports.getCartSummary = asyncHandler(async (req, res) => {

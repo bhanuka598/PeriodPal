@@ -11,9 +11,9 @@ const cartItemSchema = new mongoose.Schema(
 
 const cartSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.Mixed, required: true }, // Can be ObjectId or string (for guest)
-    items: [cartItemSchema],
-    status: { type: String, enum: ["ACTIVE", "CHECKED_OUT"], default: "ACTIVE" },
+    userId: { type: String, required: true, index: true }, // "GUEST" or user _id/email
+    items: { type: [cartItemSchema], default: [] },
+    status: { type: String, enum: ["ACTIVE", "CHECKED_OUT", "CANCELLED"], default: "ACTIVE" }
   },
   { timestamps: true }
 );
