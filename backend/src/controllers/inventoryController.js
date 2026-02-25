@@ -1,5 +1,10 @@
 const axios = require("axios");
+
+// ✅ IMPORTANT: use the correct model filename
+// If your file is backend/src/models/inventory.js -> use "../models/inventory"
 const Inventory = require("../models/Inventory");
+
+const { sendLowStockEmail } = require("../utils/emailService");
 
 // POST /api/inventory
 exports.createInventory = async (req, res) => {
@@ -7,12 +12,14 @@ exports.createInventory = async (req, res) => {
     const { productType, totalStock, centerLocation } = req.body;
 
     if (!productType || !centerLocation) {
-      return res.status(400).json({ message: "productType and centerLocation are required" });
+      return res
+        .status(400)
+        .json({ message: "productType and centerLocation are required" });
     }
 
     const item = await Inventory.create({
       productType,
-      totalStock: totalStock ?? 0,
+      totalStock: typeof totalStock === "number" ? totalStock : 0,
       centerLocation,
       lastUpdated: new Date(),
     });
@@ -35,7 +42,7 @@ exports.getInventory = async (req, res) => {
     if (req.query.productType) filter.productType = req.query.productType;
     if (req.query.centerLocation) filter.centerLocation = req.query.centerLocation;
 
-    const items = await Inventory.find(filter).sort({ updatedAt: -1 });
+    const items = await Inventory.find(filter).sort({ lastUpdated: -1 });
     return res.json(items);
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -85,6 +92,7 @@ exports.deleteInventory = async (req, res) => {
 exports.adjustStock = async (req, res) => {
   try {
     const { change } = req.body;
+
     if (typeof change !== "number") {
       return res.status(400).json({ message: "change must be a number" });
     }
@@ -98,6 +106,17 @@ exports.adjustStock = async (req, res) => {
     item.totalStock = newStock;
     item.lastUpdated = new Date();
     await item.save();
+
+    // ✅ EMAIL ALERT (Third-party)
+    const limit = Number(process.env.LOW_STOCK_LIMIT || 20);
+    if (item.totalStock <= limit) {
+      await sendLowStockEmail({
+        to: process.env.EMAIL_USER, // demo: send to yourself
+        productType: item.productType,
+        totalStock: item.totalStock,
+        centerLocation: item.centerLocation,
+      });
+    }
 
     return res.json({ message: "Stock adjusted", item });
   } catch (err) {
@@ -118,7 +137,6 @@ exports.reverseGeocodeCenter = async (req, res) => {
     const response = await axios.get(url, {
       params: { format: "jsonv2", lat, lon: lng },
       headers: {
-        // Nominatim recommends identifying your app
         "User-Agent": "PeriodPal-Inventory/1.0 (student-project)",
       },
       timeout: 10000,
@@ -131,6 +149,8 @@ exports.reverseGeocodeCenter = async (req, res) => {
       address: data.address,
     });
   } catch (err) {
-    return res.status(502).json({ message: "Third-party API failed", error: err.message });
+    return res
+      .status(502)
+      .json({ message: "Third-party API failed", error: err.message });
   }
 };
