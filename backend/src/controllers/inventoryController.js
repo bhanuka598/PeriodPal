@@ -1,7 +1,6 @@
 const axios = require("axios");
 
-// ✅ IMPORTANT: use the correct model filename
-// If your file is backend/src/models/inventory.js -> use "../models/inventory"
+
 const Inventory = require("../models/Inventory");
 
 const { sendLowStockEmail } = require("../utils/emailService");
@@ -107,11 +106,11 @@ exports.adjustStock = async (req, res) => {
     item.lastUpdated = new Date();
     await item.save();
 
-    // ✅ EMAIL ALERT (Third-party)
+   
     const limit = Number(process.env.LOW_STOCK_LIMIT || 20);
     if (item.totalStock <= limit) {
       await sendLowStockEmail({
-        to: process.env.EMAIL_USER, // demo: send to yourself
+        to: process.env.EMAIL_USER, 
         productType: item.productType,
         totalStock: item.totalStock,
         centerLocation: item.centerLocation,
@@ -124,8 +123,7 @@ exports.adjustStock = async (req, res) => {
   }
 };
 
-// ✅ Third-party API feature (OpenStreetMap Nominatim)
-// GET /api/inventory/nearby?lat=6.9271&lng=79.8612
+
 exports.reverseGeocodeCenter = async (req, res) => {
   try {
     const { lat, lng } = req.query;
