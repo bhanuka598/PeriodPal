@@ -3,8 +3,7 @@ const express = require("express");
 const router = express.Router();
 const controller = require("../controllers/inventoryController");
 
-// ✅ TEMP: auth removed ONLY for testing in Postman
-// const { protect, authorize } = require("../middleware/authMiddleware");
+
 
 // third-party feature
 router.get("/nearby", controller.reverseGeocodeCenter);
