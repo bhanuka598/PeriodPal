@@ -1,10 +1,11 @@
 import express from "express";
 import { registerUser, loginUser } from "../controllers/authController.js";
-import {
+import { 
+    getUserProfile, 
+    updateUserProfile, 
     getAllUsers,
-    getUserProfile,
-    updateUserProfile,
-    deleteUser
+    updateUserByAdmin,
+    deleteUserByAdmin,
 } from "../controllers/userController.js";
 import passport from "passport";
 import generateToken from "../utils/generateToken.js";
@@ -51,7 +52,7 @@ router.post("/login", loginUser);
 router.get("/profile", protect, getUserProfile);
 
 // Update logged-in user profile
-router.put("/profile", protect, updateUserProfile);
+router.put("/profile/:id", protect, updateUserProfile);
 
 
 // ================= ADMIN ROUTES =================
@@ -59,8 +60,11 @@ router.put("/profile", protect, updateUserProfile);
 // Get all users (Admin only)
 router.get("/", protect, authorizeRoles("admin"), getAllUsers);
 
-// Delete user (Admin only)
-router.delete("/:id", protect, authorizeRoles("admin"), deleteUser);
+// Update any user (Admin only)
+router.put("/:id", protect, authorizeRoles("admin"), updateUserByAdmin);
+ 
+// Delete any user (Admin only)
+router.delete("/:id", protect, authorizeRoles("admin"), deleteUserByAdmin);
 
 
 export default router;
