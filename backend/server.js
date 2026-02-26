@@ -2,7 +2,6 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const morgan = require("morgan");
-const router = require("./src/routes/authRoutes");
 const connectDB = require("./src/config/db");
 
 dotenv.config({ path: "./.env" });
@@ -19,7 +18,6 @@ app.get("/", (req, res) => {
 });
 
 app.use(express.json());
-app.use("/users", router);
 app.use("/api/products", require("./src/routes/productRoutes"));
 app.use("/api/cart", require("./src/routes/cartRoutes"));
 app.use("/api/orders", require("./src/routes/orderRoutes"));
