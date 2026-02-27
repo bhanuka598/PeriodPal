@@ -17,7 +17,6 @@ app.get("/", (req, res) => {
   res.send("PeriodPal API is running...");
 });
 
-
 app.use(express.json());
 app.use("/api/products", require("./src/routes/productRoutes"));
 app.use("/api/cart", require("./src/routes/cartRoutes"));
