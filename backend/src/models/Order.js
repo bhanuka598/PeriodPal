@@ -28,10 +28,10 @@ const orderSchema = new mongoose.Schema(
     },
 
     payment: {
-      method: { type: String, default: "MOCK" },
-      status: { type: String, enum: ["UNPAID", "PAID", "FAILED"], default: "UNPAID" },
-      transactionId: { type: String, default: "" },
-    },
+  status: { type: String, enum: ["UNPAID", "PENDING", "PAID", "FAILED"], default: "UNPAID" },
+  method: { type: String, enum: ["MOCK", "STRIPE"], default: "MOCK" },
+  transactionId: String,
+},
 
     orderStatus: { type: String, enum: ["PENDING", "PAID", "FAILED"], default: "PENDING" },
   },
