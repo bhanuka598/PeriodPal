@@ -93,19 +93,21 @@ The system uses JWT authentication and Role-Based Access.
 
 ### 👤 Users
 
-| Method | Endpoint            | Description      | Auth    |
-| ------ | ------------------- | ---------------- | ------- |
-| POST   | /api/users/register | Register user    | ❌       |
-| POST   | /api/users/login    | Login            | ❌       |
-| GET    | /api/users          | Get all users    | ✅ Admin |
-| GET    | /api/users/:id      | Get user profile | ✅       |
-| PUT    | /api/users/:id      | Update user      | ✅       |
-| DELETE | /api/users/:id      | Delete user      | ✅ Admin |
+| Method | Endpoint                | Description         | Auth                                          |
+| ------ | ----------------------- | ------------------- | --------------------------------------------- |
+| POST   | /api/users/register     | Register user       | ✅ Admin/NGO/Beneficiary/Health Officer/Donor |
+| POST   | /api/users/login        | Login               | ✅ Admin/NGO/Beneficiary/Health Officer/Donor |
+| GET    | /api/users/profile      | Get user profile    | ✅ NGO/Beneficiary/Health Officer/Donor       |
+| PUT    | /api/users/profile/:id  | Update user profile | ✅ NGO/Beneficiary/Health Officer/Donor       |
+| GET    | /api/users              | Get all users       | ✅ Admin                                      |
+| GET    | /api/users/:id          | Get user profile    | ✅ Admin                                      |
+| PUT    | /api/users/:id          | Update user         | ✅ Admin                                      |
+| DELETE | /api/users/:id          | Delete user         | ✅ Admin                                      |
 
 ### 🌼 Menstrual Records
 
-| Method | Endpoint         | Description    | Auth          |
-| ------ | ---------------- | -------------- | ------------- |
+| Method | Endpoint         | Description    | Auth           |
+| ------ | ---------------- | -------------- | -------------- |
 | POST   | /api/records     | Add record     | ✅ Beneficiary |
 | GET    | /api/records/my  | Get my records | ✅ Beneficiary |
 | PUT    | /api/records/:id | Update record  | ✅ Beneficiary |
@@ -113,7 +115,15 @@ The system uses JWT authentication and Role-Based Access.
 
 ### 🏪 Inventory
 
-
+| Method | Endpoint                  | Description                                | Auth         |
+| ------ | ------------------------- | ------------------------------------------ | ------------ |
+| POST   | /api/inventory            | Create new inventory record                | ✅ Admin/NGO |
+| GET    | /api/inventory            | Get all inventory records                  | ✅ Admin/NGO |
+| GET    | /api/inventory/:id        | Get single inventory by ID                 | ✅ Admin/NGO |
+| PUT    | /api/inventory/:id        | Update full inventory record               | ✅ Admin/NGO |
+| PATCH  | /api/inventory/:id/adjust | Increase or decrease stock quantity        | ✅ Admin/NGO |
+| DELETE | /api/inventory/:id        | Delete inventory record                    | ✅ Admin     |
+| GET    | /api/inventory/nearby     | Convert GPS to address (OpenStreetMap API) | ✅ Admin/NGO |
 
 ### 💖 Donations
 
