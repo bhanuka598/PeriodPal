@@ -1,8 +1,8 @@
-import User from "../models/User.js";
-import generateToken from "../utils/generateToken.js";
+const User = require("../models/User");
+const generateToken = require("../utils/generateToken");
 
 // ================= REGISTER =================
-export const registerUser = async (req, res, next) => {
+exports.registerUser = async (req, res) => {
     try {
         console.log('Register request body:', req.body);
         const { username, email, password, role, location, eligibileForSupport } = req.body;
@@ -106,7 +106,7 @@ export const registerUser = async (req, res, next) => {
 
 
 // ================= LOGIN =================
-export const loginUser = async (req, res) => {
+exports.loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
 

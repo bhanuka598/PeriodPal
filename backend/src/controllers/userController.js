@@ -1,15 +1,15 @@
-import User from "../models/User.js";
-import asyncHandler from "express-async-handler";
-import generateToken from "../utils/generateToken.js";
+const User = require("../models/User");
+const asyncHandler = require("express-async-handler");
+const generateToken = require("../utils/generateToken");
 
 // ================= GET ALL USERS (ADMIN) =================
-export const getAllUsers = asyncHandler(async (req, res) => {
+exports.getAllUsers = asyncHandler(async (req, res) => {
     const users = await User.find().select("-password");
     res.json(users);
 });
 
 // ================= GET PROFILE =================
-export const getUserProfile = asyncHandler(async (req, res) => {
+exports.getUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id).select("-password");
     if (user) {
         res.json(user);
@@ -20,7 +20,7 @@ export const getUserProfile = asyncHandler(async (req, res) => {
 });
 
 // ================= UPDATE PROFILE =================
-export const updateUserProfile = asyncHandler(async (req, res) => {
+exports.updateUserProfile = asyncHandler(async (req, res) => {
     // If admin is updating someone else's profile
     if (req.user.role === 'admin' && req.params.id) {
         return updateUserByAdmin(req, res);
@@ -70,7 +70,7 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
 });
 
 // ================= ADMIN UPDATE USER =================
-export const updateUserByAdmin = asyncHandler(async (req, res) => {
+exports.updateUserByAdmin = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id);
  
     if (!user) {
@@ -120,7 +120,7 @@ export const updateUserByAdmin = asyncHandler(async (req, res) => {
 });
  
 // ================= ADMIN DELETE USER =================
-export const deleteUserByAdmin = asyncHandler(async (req, res) => {
+exports.deleteUserByAdmin = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id);
     
     if (!user) {

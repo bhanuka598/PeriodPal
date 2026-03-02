@@ -1,8 +1,6 @@
-// config.js
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
+const dotenv = require("dotenv");
+const path = require("path");
+const { fileURLToPath } = require("url");
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -31,7 +29,7 @@ for (const envVar of requiredEnvVars) {
   }
 }
 
-export default {
+const config = {
   google: {
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -46,3 +44,5 @@ export default {
   port: process.env.PORT || 5000,
   nodeEnv: process.env.NODE_ENV || 'development'
 };
+
+module.exports = config;

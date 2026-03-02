@@ -4,8 +4,6 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const morgan = require("morgan");
 const connectDB = require("./src/config/db");
-const userRoutes = require("./src/routes/userRoutes");
-const authRoutes = require("./src/routes/authRoutes");
 const passport = require("./src/config/passport");
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
@@ -14,6 +12,7 @@ dotenv.config();
 connectDB();
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
@@ -73,6 +72,8 @@ app.use("/api/cart", require("./src/routes/cartRoutes"));
 app.use("/api/orders", require("./src/routes/orderRoutes"));
 app.use("/api/inventory", require("./src/routes/inventoryRoutes"));
 app.use("/api/records", require("./src/routes/menstrualRecordRoutes"));
+app.use("/api/users", require("./src/routes/userRoutes"));
+app.use("/api/auth", require("./src/routes/authRoutes"));
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
@@ -86,8 +87,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () =>
   console.log(`Server running on port ${PORT}`)
 );
+
+module.exports = app;

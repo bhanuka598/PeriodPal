@@ -1,8 +1,8 @@
-import passport from "passport";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import User from "../models/User.js";
-import config from './config.js';
-import generateToken from "../utils/generateToken.js";
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const User = require("../models/User");
+const config = require("./config");
+const generateToken = require("../utils/generateToken");
 
 // Serialize user into the session
 passport.serializeUser((user, done) => {
@@ -28,7 +28,7 @@ passport.use(new GoogleStrategy(
     passReqToCallback: true,
     scope: ["profile", "email"]
   },
-  async (req, accessToken, refreshToken, profile, done) => {
+  async (_req, _accessToken, _refreshToken, profile, done) => {
     try {
       // Check if user exists
       let user = await User.findOne({ 
@@ -69,4 +69,4 @@ passport.use(new GoogleStrategy(
   }
 ));
 
-export default passport;
+module.exports = passport;
