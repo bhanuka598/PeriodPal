@@ -1,9 +1,6 @@
-// In authRoutes.js
-import express from 'express';
-import passport from 'passport';
-import generateToken from '../utils/generateToken.js';
-
-const router = express.Router();
+const router = require("express").Router();
+const passport = require("passport");
+const generateToken = require("../utils/generateToken");
 
 // @desc    Auth with Google
 // @route   GET /api/auth/google
@@ -65,4 +62,4 @@ router.get('/me',
   }
 );
 
-export default router;
+module.exports = router;
