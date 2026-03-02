@@ -1,18 +1,15 @@
-import express from "express";
-import { registerUser, loginUser } from "../controllers/authController.js";
-import { 
+const router = require("express").Router();
+const { registerUser, loginUser } = require("../controllers/authController");
+const { 
     getUserProfile, 
     updateUserProfile, 
     getAllUsers,
     updateUserByAdmin,
     deleteUserByAdmin,
-} from "../controllers/userController.js";
-import passport from "passport";
-import generateToken from "../utils/generateToken.js";
-import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
-
-const router = express.Router();
-
+} = require("../controllers/userController");
+const passport = require("passport");
+const generateToken = require("../utils/generateToken");
+const { protect, authorizeRoles } = require("../middleware/authMiddleware");
 
 // Redirect to Google
 router.get(
@@ -67,4 +64,4 @@ router.put("/:id", protect, authorizeRoles("admin"), updateUserByAdmin);
 router.delete("/:id", protect, authorizeRoles("admin"), deleteUserByAdmin);
 
 
-export default router;
+module.exports = router;
