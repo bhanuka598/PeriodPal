@@ -1,8 +1,5 @@
 const dotenv = require("dotenv");
 const path = require("path");
-const { fileURLToPath } = require("url");
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Load environment variables from .env file
 const result = dotenv.config({ 
