@@ -1,10 +1,10 @@
-require("dotenv").config();
-
 const express = require("express");
+const dotenv = require("dotenv");
 const cors = require("cors");
 const morgan = require("morgan");
 const connectDB = require("./src/config/db");
 
+dotenv.config();
 connectDB();
 
 const app = express();
@@ -40,6 +40,7 @@ app.get("/test-email", async (req, res) => {
 app.use("/api/products", require("./src/routes/productRoutes"));
 app.use("/api/cart", require("./src/routes/cartRoutes"));
 app.use("/api/orders", require("./src/routes/orderRoutes"));
+app.use("/api/inventory", require("./src/routes/inventoryRoutes"));
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
