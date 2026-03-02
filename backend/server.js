@@ -41,6 +41,7 @@ app.use("/api/products", require("./src/routes/productRoutes"));
 app.use("/api/cart", require("./src/routes/cartRoutes"));
 app.use("/api/orders", require("./src/routes/orderRoutes"));
 app.use("/api/inventory", require("./src/routes/inventoryRoutes"));
+app.use("/api/records", require("./src/routes/menstrualRecordRoutes"));
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
