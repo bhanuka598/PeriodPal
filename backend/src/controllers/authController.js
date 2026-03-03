@@ -15,6 +15,21 @@ exports.registerUser = async (req, res) => {
             });
         }
 
+        // Check if the email already exists in our records
+        const existingUser = await User.findOne({ email: email.toLowerCase() });
+        if (existingUser) {
+            return res.status(409).json({ 
+                message: "This Gmail address is already registered to an employee." 
+            });
+        }
+
+        // We convert to lowercase to prevent bypasses like "User@GMAIL.com"
+        if (!email.toLowerCase().endsWith('@gmail.com')) {
+            return res.status(400).json({ 
+                message: 'Access Denied: Only @gmail.com addresses are permitted in this system.' 
+            });
+        }
+
         // Password validation
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?])(?!.*\s)(?!.*(.)\1{2,}).{8,}$/;
         const passwordErrors = [];
