@@ -1,10 +1,10 @@
 # ==============================
-# Node modules
+# Dependencies
 # ==============================
 node_modules/
 
 # ==============================
-# Environment variables
+# Environment Variables
 # ==============================
 .env
 .env.*
@@ -20,7 +20,7 @@ yarn-debug.log*
 pnpm-debug.log*
 
 # ==============================
-# Runtime / temp
+# Runtime / Temp files
 # ==============================
 pids/
 *.pid
@@ -29,20 +29,39 @@ tmp/
 temp/
 
 # ==============================
-# Coverage & test output
+# Coverage & Test Output
 # ==============================
 coverage/
 .nyc_output/
 artillery-report/
 
 # ==============================
-# Build folders
+# Build Output
 # ==============================
 dist/
 build/
+.out/
 
 # ==============================
-# OS files
+# Vite
+# ==============================
+.vite/
+vite.svg
+
+# ==============================
+# React
+# ==============================
+build/
+.cache/
+
+# ==============================
+# Tailwind CSS
+# ==============================
+tailwind.config.js.lock
+postcss.config.js.lock
+
+# ==============================
+# OS Files
 # ==============================
 .DS_Store
 Thumbs.db
@@ -56,14 +75,21 @@ Thumbs.db
 *.swo
 
 # ==============================
-# MongoDB local data (if any)
+# MongoDB local database files
 # ==============================
 data/
 *.wt
 *.lock
 
 # ==============================
-# Misc
+# Package files
 # ==============================
 *.tgz
 *.bak
+
+# ==============================
+# Debug files
+# ==============================
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
