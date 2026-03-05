@@ -1,22 +1,94 @@
+const config = require("./src/config/config");
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const morgan = require("morgan");
 const connectDB = require("./src/config/db");
+const passport = require("./src/config/passport");
+const session = require("express-session");
+const cookieParser = require("cookie-parser");
 
 dotenv.config();
 connectDB();
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// Middleware
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+app.use(morgan("dev"));
+
+/**
+ * ✅ Stripe webhook MUST be raw body
+ * Put this BEFORE express.json()
+ */
+app.use("/api/orders/webhook/stripe", express.raw({ type: "application/json" }));
+
+/**
+ * ✅ Normal JSON middleware for all other routes
+ */
 app.use(express.json());
+app.use(cookieParser());
+
+// Session configuration
+app.use(
+  session({
+    secret: config.session.secret,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: config.nodeEnv === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    }
+  })
+);
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.get("/", (req, res) => {
   res.send("PeriodPal API is running...");
 });
 
-const PORT = process.env.PORT || 5000;
+app.get("/test-email", async (req, res) => {
+  try {
+    const sendEmail = require("./src/utils/sendEmail");
+    await sendEmail("yourrealemail@gmail.com", "Test Email", "<h1>Hello PeriodPal</h1>");
+    res.json({ success: true, message: "Email sent" });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.use("/api/products", require("./src/routes/productRoutes"));
+app.use("/api/cart", require("./src/routes/cartRoutes"));
+app.use("/api/orders", require("./src/routes/orderRoutes"));
+app.use("/api/inventory", require("./src/routes/inventoryRoutes"));
+app.use("/api/records", require("./src/routes/menstrualRecordRoutes"));
+app.use("/api/users", require("./src/routes/userRoutes"));
+app.use("/api/auth", require("./src/routes/authRoutes"));
+
+app.use((err, req, res, next) => {
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "Server Error";
+
+  console.error(`[${statusCode}]`, message);
+
+  res.status(statusCode).json({
+    success: false,
+    message,
+  });
+});
 
 app.listen(PORT, () =>
   console.log(`Server running on port ${PORT}`)
 );
+
+module.exports = app;
