@@ -49,21 +49,21 @@ export function Register() {
 
   const roles = [
     {
-      id: 'user',
-      title: 'User',
-      desc: 'Track health & request products',
+      id: 'beneficiary',
+      title: 'Beneficiary',
+      desc: 'Track cycle',
       icon: Heart
     },
     {
       id: 'ngo',
-      title: 'NGO Staff',
-      desc: 'Manage inventory & requests',
+      title: 'NGO',
+      desc: 'Manage inventory',
       icon: Building
     },
     {
       id: 'donor',
       title: 'Donor',
-      desc: 'Contribute products & funds',
+      desc: 'Contribute funds',
       icon: Users
     },
     {
