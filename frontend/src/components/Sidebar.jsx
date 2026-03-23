@@ -35,12 +35,6 @@ export function Sidebar({ isOpen, closeSidebar }) {
         roles: ['user', 'admin']
       },
       {
-        name: 'Product Requests',
-        path: '/requests',
-        icon: Package,
-        roles: ['user', 'ngo', 'admin']
-      },
-      {
         name: 'Inventory',
         path: '/inventory',
         icon: Warehouse,

@@ -6,7 +6,6 @@ import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
 import { Dashboard } from '../pages/Dashboard';
 import { MenstrualRecords } from '../pages/MenstrualRecords';
-import { ProductRequests } from '../pages/ProductRequests';
 import { Inventory } from '../pages/Inventory';
 import { Donations } from '../pages/Donations';
 import { UsersManagement } from '../pages/UsersManagement';
@@ -39,15 +38,6 @@ export function AppRoutes() {
         />
 
         <Route
-          path="/requests"
-          element={
-            <ProtectedRoute allowedRoles={['user', 'ngo', 'admin']}>
-              <ProductRequests />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
           path="/inventory"
           element={
             <ProtectedRoute allowedRoles={['ngo', 'admin']}>
@@ -56,7 +46,14 @@ export function AppRoutes() {
           }
         />
 
-        <Route path="/donations" element={<Donations />} />
+        <Route 
+          path="/donations" 
+          element={
+            <ProtectedRoute allowedRoles={['donor']}>
+              <Donations />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/users"
