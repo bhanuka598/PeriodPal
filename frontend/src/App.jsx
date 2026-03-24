@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
 import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
@@ -13,13 +12,12 @@ function PublicLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const getCurrentPage = () => {
-    if (location.pathname === '/about') return 'about';
-    if (location.pathname === '/contact') return 'contact';
-    return 'home';
-  };
-
-  const currentPage = getCurrentPage();
+  const currentPage =
+    location.pathname === '/about'
+      ? 'about'
+      : location.pathname === '/contact'
+      ? 'contact'
+      : 'home';
 
   const setPage = (page) => {
     if (page === 'home') navigate('/');
@@ -32,13 +30,11 @@ function PublicLayout() {
       <Navbar currentPage={currentPage} setPage={setPage} />
 
       <main className="flex-grow flex flex-col pt-16 md:pt-20">
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<HomePage setPage={setPage} />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-          </Routes>
-        </AnimatePresence>
+        <Routes>
+          <Route path="/" element={<HomePage setPage={setPage} />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+        </Routes>
       </main>
 
       <Footer setPage={setPage} />
@@ -51,17 +47,12 @@ export function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Public UI */}
-          <Route path="/" element={<PublicLayout />} />
-          <Route path="/about" element={<PublicLayout />} />
-          <Route path="/contact" element={<PublicLayout />} />
+          <Route path="/*" element={<PublicLayout />} />
 
-          {/* System UI */}
           <Route path="/login/*" element={<AppRoutes />} />
           <Route path="/register/*" element={<AppRoutes />} />
           <Route path="/dashboard/*" element={<AppRoutes />} />
           <Route path="/records/*" element={<AppRoutes />} />
-          <Route path="/requests/*" element={<AppRoutes />} />
           <Route path="/inventory/*" element={<AppRoutes />} />
           <Route path="/donations/*" element={<AppRoutes />} />
           <Route path="/users/*" element={<AppRoutes />} />
