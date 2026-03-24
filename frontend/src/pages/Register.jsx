@@ -222,7 +222,13 @@ export function Register() {
           </form>
 
           <p className="text-center mt-6 text-sm">
-            Already have an account? <Link to="/login">Sign in</Link>
+            Already have an account? 
+            <Link
+              to="/login"
+              className="font-medium text-primary-600 hover:text-primary-500"
+            >
+              Sign in
+            </Link>
           </p>
         </div>
       </motion.div>
