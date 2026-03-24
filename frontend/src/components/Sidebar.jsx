@@ -24,7 +24,7 @@ export function Sidebar({ isOpen, closeSidebar }) {
     const links = [
       {
         name: 'Dashboard',
-        path: '/',
+        path: '/dashboard',
         icon: LayoutDashboard,
         roles: ['user', 'ngo', 'donor', 'admin']
       },
@@ -44,7 +44,7 @@ export function Sidebar({ isOpen, closeSidebar }) {
         name: 'Donations',
         path: '/donations',
         icon: HeartHandshake,
-        roles: ['user', 'ngo', 'donor', 'admin']
+        roles: ['donor']
       },
       {
         name: 'Users',

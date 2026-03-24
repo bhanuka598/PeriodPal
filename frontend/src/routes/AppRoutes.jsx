@@ -48,7 +48,7 @@ export function AppRoutes() {
         <Route
           path="/donations"
           element={
-            <ProtectedRoute allowedRoles={['donor']}>
+            <ProtectedRoute allowedRoles={['donor', 'admin']}>
               <Donations />
             </ProtectedRoute>
           }
