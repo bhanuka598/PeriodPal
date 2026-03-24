@@ -13,11 +13,11 @@ import { UsersManagement } from '../pages/UsersManagement';
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* Public auth routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Protected Routes */}
+      {/* Protected system routes */}
       <Route
         element={
           <ProtectedRoute>
@@ -25,9 +25,8 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
 
-        {/* Role-based routes */}
         <Route
           path="/records"
           element={
@@ -46,8 +45,8 @@ export function AppRoutes() {
           }
         />
 
-        <Route 
-          path="/donations" 
+        <Route
+          path="/donations"
           element={
             <ProtectedRoute allowedRoles={['donor']}>
               <Donations />
@@ -66,7 +65,7 @@ export function AppRoutes() {
       </Route>
 
       {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }
