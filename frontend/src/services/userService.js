@@ -1,19 +1,32 @@
-import API from '../api/axios';
+import API from "../api/axios";
 
-export const userService = {
-  login: async (credentials) => {
-    return API.post('/auth/login', credentials);
-  },
+// Auth
+export const loginUser = async (data) => {
+  return await API.post("/users/login", data);
+};
 
-  register: async (userData) => {
-    return API.post('/auth/register', userData);
-  },
+export const registerUser = async (data) => {
+  return await API.post("/users/register", data);
+};
 
-  getProfile: async () => {
-    return API.get('/auth/profile');
-  },
+// Profile
+export const getUserProfile = async () => {
+  return await API.get("/users/profile");
+};
 
-  updateProfile: async (userData) => {
-    return API.put('/auth/profile', userData);
-  }
+export const updateUserProfile = async (data) => {
+  return await API.put("/users/profile", data);
+};
+
+// Admin user management
+export const getAllUsers = async () => {
+  return await API.get("/users");
+};
+
+export const updateUserByAdmin = async (id, data) => {
+  return await API.put(`/users/${id}`, data);
+};
+
+export const deleteUserByAdmin = async (id) => {
+  return await API.delete(`/users/${id}`);
 };

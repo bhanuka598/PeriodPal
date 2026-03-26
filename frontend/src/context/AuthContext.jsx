@@ -1,58 +1,63 @@
 import React, { useEffect, useState, createContext, useContext } from 'react';
-import { userService } from '../services/userService';
+import { loginUser, registerUser } from '../services/userService';
 
 const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for token on mount
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    const initializeAuth = () => {
+      try {
+        const storedToken = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
+        if (storedToken && storedUser) {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (error) {
+        console.error('Failed to initialize auth:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setToken(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setLoading(false);
+    initializeAuth();
   }, []);
 
   const login = async (email, password) => {
     setLoading(true);
+
     try {
-      // Real API (future)
-      // const response = await userService.login({ email, password });
+      const response = await loginUser({ email, password });
+      const data = response.data;
 
-      // Mock API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const authToken = data.token || data.accessToken;
+      const authUser = data.user || data.data;
 
-      let role = 'user';
-      if (email.includes('ngo')) role = 'ngo';
-      if (email.includes('donor')) role = 'donor';
-      if (email.includes('admin')) role = 'admin';
+      if (!authToken) {
+        throw new Error('Authentication token not received from server');
+      }
 
-      const mockUser = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: email
-          .split('@')[0]
-          .replace('.', ' ')
-          .replace(/\b\w/g, (l) => l.toUpperCase()),
-        email,
-        role
-      };
+      setToken(authToken);
+      setUser(authUser || null);
 
-      const mockToken = 'mock-jwt-token-12345';
+      localStorage.setItem('token', authToken);
 
-      setToken(mockToken);
-      setUser(mockUser);
+      if (authUser) {
+        localStorage.setItem('user', JSON.stringify(authUser));
+      } else {
+        localStorage.removeItem('user');
+      }
 
-      localStorage.setItem('token', mockToken);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-
+      return data;
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -63,27 +68,26 @@ export function AuthProvider({ children }) {
 
   const register = async (name, email, password, role) => {
     setLoading(true);
+
     try {
-      // Real API (future)
-      // await userService.register({ name, email, password, role });
+      const response = await registerUser({ name, email, password, role });
+      const data = response.data;
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const authToken = data.token || data.accessToken;
+      const authUser = data.user || data.data;
 
-      const mockUser = {
-        id: Math.random().toString(36).substr(2, 9),
-        name,
-        email,
-        role
-      };
+      // If backend returns token on registration, store it
+      if (authToken) {
+        setToken(authToken);
+        localStorage.setItem('token', authToken);
+      }
 
-      const mockToken = 'mock-jwt-token-12345';
+      if (authUser) {
+        setUser(authUser);
+        localStorage.setItem('user', JSON.stringify(authUser));
+      }
 
-      setToken(mockToken);
-      setUser(mockUser);
-
-      localStorage.setItem('token', mockToken);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-
+      return data;
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
@@ -102,18 +106,14 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     token,
-    isAuthenticated: !!user,
+    isAuthenticated: !!token,
     loading,
     login,
     register,
     logout
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

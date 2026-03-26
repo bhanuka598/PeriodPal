@@ -1,31 +1,48 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
+import { loginUser } from "../services/userService";
 
 export function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/';
+  const from = location.state?.from?.pathname || "/dashboard";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsSubmitting(true);
 
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      const res = await loginUser({ email, password });
+
+      // Adjust these keys if your backend response differs
+      const data = res.data;
+      const token = data.token || data.accessToken;
+      const user = data.user || data.data || null;
+
+      if (!token) {
+        throw new Error("Token not received from server");
+      }
+
+      localStorage.setItem("token", token);
+      if (user) {
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+
+      navigate(from);
     } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      setError(
+        err?.response?.data?.message ||
+          "Invalid email or password. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -52,7 +69,7 @@ export function Login() {
           {error && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               className="bg-red-50 text-red-600 p-3 rounded-lg flex items-center gap-2 text-sm mb-6 border border-red-100"
             >
               <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -85,12 +102,6 @@ export function Login() {
                 <label className="block text-sm font-medium text-secondary-700">
                   Password
                 </label>
-                <a
-                  href="#forgot"
-                  className="text-sm font-medium text-primary-600 hover:text-primary-500"
-                >
-                  Forgot password?
-                </a>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -105,20 +116,6 @@ export function Login() {
                   placeholder="••••••••"
                 />
               </div>
-            </div>
-
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-secondary-300 rounded"
-              />
-              <label
-                htmlFor="remember-me"
-                className="ml-2 block text-sm text-secondary-600"
-              >
-                Remember me
-              </label>
             </div>
 
             <button
@@ -139,7 +136,7 @@ export function Login() {
 
           <div className="mt-8 text-center">
             <p className="text-sm text-secondary-600">
-              Don't have an account?{' '}
+              Don't have an account?{" "}
               <Link
                 to="/register"
                 className="font-medium text-primary-600 hover:text-primary-500"
@@ -147,20 +144,6 @@ export function Login() {
                 Register here
               </Link>
             </p>
-          </div>
-
-          <div className="mt-6 p-4 bg-primary-50 rounded-lg border border-primary-100 text-xs text-primary-800">
-            <p className="font-semibold mb-1">Demo Accounts:</p>
-            <ul className="list-disc pl-4 space-y-1 text-primary-700">
-              <li>admin@test.com (Admin User)</li>
-              <li>user@test.com (Normal User)</li>
-              <li>ngo@test.com (NGO Staff)</li>
-              <li>donor@test.com (Donor)</li>
-            </ul>
-            <p className="font-semibold mb-1">Passwords:</p>
-            <ul className="list-disc pl-4 space-y-1 text-primary-700">
-              <li>admin (All users use this password)</li>
-            </ul>
           </div>
         </div>
       </motion.div>

@@ -1,47 +1,60 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   User,
   Mail,
   Lock,
-  ArrowRight,
   Heart,
   Building,
   Users,
-  ShieldCheck
-} from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { classNames } from '../utils/helpers';
+  ShieldCheck,
+  AlertCircle,
+} from "lucide-react";
+import { registerUser } from "../services/userService";
+import { classNames } from "../utils/helpers";
 
 export function Register() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('user');
-  const [error, setError] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("beneficiary");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
+    setSuccess("");
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      await register(name, email, password, role);
-      navigate('/');
+      const res = await registerUser({
+        name,
+        email,
+        password,
+        role,
+      });
+
+      setSuccess(res?.data?.message || "Registration successful");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1200);
     } catch (err) {
-      setError('Registration failed. Please try again.');
+      setError(
+        err?.response?.data?.message ||
+          "Registration failed. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -49,29 +62,29 @@ export function Register() {
 
   const roles = [
     {
-      id: 'beneficiary',
-      title: 'Beneficiary',
-      desc: 'Track cycle',
-      icon: Heart
+      id: "beneficiary",
+      title: "Beneficiary",
+      desc: "Track cycle",
+      icon: Heart,
     },
     {
-      id: 'ngo',
-      title: 'NGO',
-      desc: 'Manage inventory',
-      icon: Building
+      id: "ngo",
+      title: "NGO",
+      desc: "Manage inventory",
+      icon: Building,
     },
     {
-      id: 'donor',
-      title: 'Donor',
-      desc: 'Contribute funds',
-      icon: Users
+      id: "donor",
+      title: "Donor",
+      desc: "Contribute funds",
+      icon: Users,
     },
     {
-      id: 'admin',
-      title: 'Admin',
-      desc: 'Full system access & user management',
-      icon: ShieldCheck
-    }
+      id: "admin",
+      title: "Admin",
+      desc: "Full system access",
+      icon: ShieldCheck,
+    },
   ];
 
   return (
@@ -93,13 +106,19 @@ export function Register() {
           </div>
 
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 border border-red-100">
-              {error}
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border border-red-100 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {success && (
+            <div className="bg-green-50 text-green-700 p-3 rounded-lg text-sm mb-4 border border-green-100">
+              {success}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Name + Email */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-1.5">
@@ -136,7 +155,6 @@ export function Register() {
               </div>
             </div>
 
-            {/* Passwords */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="text-sm font-medium text-secondary-700">
@@ -150,7 +168,7 @@ export function Register() {
                     minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 py-2.5 border rounded-xl"
+                    className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl"
                   />
                 </div>
               </div>
@@ -166,15 +184,14 @@ export function Register() {
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full pl-10 py-2.5 border rounded-xl"
+                    className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Roles */}
             <div>
-              <label className="text-sm font-medium text-secondary-700 mb-3">
+              <label className="text-sm font-medium text-secondary-700 mb-3 block">
                 I am joining as:
               </label>
 
@@ -188,10 +205,10 @@ export function Register() {
                       key={r.id}
                       onClick={() => setRole(r.id)}
                       className={classNames(
-                        'cursor-pointer p-4 rounded-xl border',
+                        "cursor-pointer p-4 rounded-xl border transition-all",
                         isSelected
-                          ? 'border-primary-500 bg-primary-50'
-                          : 'border-secondary-200'
+                          ? "border-primary-500 bg-primary-50"
+                          : "border-secondary-200"
                       )}
                     >
                       <Icon className="h-6 w-6 mb-2" />
@@ -203,7 +220,6 @@ export function Register() {
               </div>
             </div>
 
-            {/* Terms */}
             <div className="flex items-start">
               <input type="checkbox" required className="mt-1" />
               <label className="ml-2 text-sm text-secondary-600">
@@ -211,18 +227,17 @@ export function Register() {
               </label>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-primary-600 text-white py-3 rounded-xl"
+              className="w-full bg-primary-600 text-white py-3 rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-70"
             >
-              {isSubmitting ? 'Loading...' : 'Create Account'}
+              {isSubmitting ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 
-          <p className="text-center mt-6 text-sm">
-            Already have an account? 
+          <p className="text-center mt-6 text-sm text-secondary-600">
+            Already have an account?{" "}
             <Link
               to="/login"
               className="font-medium text-primary-600 hover:text-primary-500"
