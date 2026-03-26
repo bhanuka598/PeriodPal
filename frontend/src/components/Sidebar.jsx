@@ -44,7 +44,7 @@ export function Sidebar({ isOpen, closeSidebar }) {
         name: 'Donations',
         path: '/donations',
         icon: HeartHandshake,
-        roles: ['donor']
+        roles: ['donor', 'admin']
       },
       {
         name: 'Users',
