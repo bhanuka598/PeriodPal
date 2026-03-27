@@ -11,16 +11,16 @@ export const registerUser = async (data) => {
 
 // Profile
 export const getUserProfile = async () => {
-  return await API.get("/users/profile");
+  return await API.get("/users/profile/");
 };
 
-export const updateUserProfile = async (data) => {
-  return await API.put("/users/profile", data);
+export const updateUserProfile = async (id, data) => {
+  return await API.put(`/users/profile/${id}`, data);
 };
 
 // Admin user management
 export const getAllUsers = async () => {
-  return await API.get("/users");
+  return await API.get("/users/");
 };
 
 export const updateUserByAdmin = async (id, data) => {

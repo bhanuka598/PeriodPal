@@ -107,7 +107,7 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
               className="flex items-center gap-3 p-1 rounded-full hover:bg-secondary-50 transition-colors focus:outline-none"
             >
               <div className="h-9 w-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-semibold text-sm border border-primary-200">
-                {getInitials(user?.name || '')}
+                {getInitials(user?.username || '')}
               </div>
 
               <div className="hidden md:block text-left">
@@ -133,7 +133,7 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
                 >
                   <div className="px-4 py-3 border-b border-secondary-100 md:hidden">
                     <p className="text-sm font-medium text-secondary-900">
-                      {user?.name}
+                      {user?.username}
                     </p>
                     <p className="text-xs text-secondary-500 capitalize">
                       {user?.role}

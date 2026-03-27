@@ -42,7 +42,6 @@ export function UsersManagement() {
     email: '',
     role: 'beneficiary',
     location: '',
-    eligibleForSupport: 'Not Eligibile',
     isVerified: 'Not Verified'
   });
 
@@ -85,19 +84,6 @@ export function UsersManagement() {
     }
   };
 
-  const normalizeEligibility = (eligibleForSupport) => {
-    if (!eligibleForSupport) return 'Eligibile';
-
-    switch (eligibleForSupport.toLowerCase()) {
-      case 'eligible':
-        return 'Eligibile';
-      case 'noteligible':
-        return 'Not Eligibile';
-      default:
-        return eligibleForSupport;
-    }
-  };
-
   const normalizeVerification = (isVerified) => {
     if (isVerified === undefined || isVerified === null) return 'Not Verified';
     
@@ -106,13 +92,12 @@ export function UsersManagement() {
       return isVerified ? 'Verified' : 'Not Verified';
     }
     
-    // Handle string values
-    if (typeof isVerified === 'string') {
+    // Handle boolean values
+    if (typeof isVerified === 'boolean') {
       switch (isVerified.toLowerCase()) {
-        case 'verified':
+        case 'true':
           return 'Verified';
-        case 'notverified':
-        case 'not_verified':
+        case 'false':
           return 'Not Verified';
         default:
           return isVerified;
@@ -127,7 +112,6 @@ export function UsersManagement() {
     username: u.username || 'Unnamed User',
     email: u.email || '',
     role: normalizeRole(u.role),
-    eligibleForSupport: normalizeEligibility(u.eligibleForSupport || 'Eligibile'),
     isVerified: normalizeVerification(u.isVerified || 'Verified'),
     joinedDate: u.createdAt || u.joinedDate || new Date().toISOString(),
     location: u.location || 'N/A'
@@ -256,10 +240,9 @@ export function UsersManagement() {
     setFormData({
       username: '',
       email: '',
-      role: 'beneficiary',
+      role: '',
       location: '',
-      eligibleForSupport: 'Not Eligibile',
-      isVerified: 'Not Verified'
+      isVerified: ''
     });
     setIsModalOpen(true);
   };
@@ -269,10 +252,9 @@ export function UsersManagement() {
     setFormData({
       username: selectedUser.username || '',
       email: selectedUser.email || '',
-      role: selectedUser.role || 'beneficiary',
+      role: selectedUser.role || '',
       location: selectedUser.location || '',
-      eligibleForSupport: selectedUser.eligibleForSupport || 'Not Eligibile',
-      isVerified: selectedUser.isVerified || 'Not Verified'
+      isVerified: selectedUser.isVerified || ''
     });
     setIsModalOpen(true);
   };
@@ -287,8 +269,7 @@ export function UsersManagement() {
         email: formData.email,
         role: formData.role,
         location: formData.location,
-        eligibleForSupport: formData.eligibleForSupport,
-        isVerified: formData.isVerified
+        isVerified: formData.isVerified === 'Verified'
       };
 
       if (editingUser) {
@@ -320,28 +301,6 @@ export function UsersManagement() {
     } catch (err) {
       console.error('Failed to delete user:', err);
       setError(err?.response?.data?.message || 'Failed to delete user');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleToggleEligibility = async (selectedUser) => {
-    try {
-      setActionLoading(true);
-      setError('');
-
-      const nextStatus =
-        selectedUser.eligibleForSupport === 'Eligibile' ? 'Not Eligibile' : 'Eligibile';
-
-      await updateUserByAdmin(selectedUser.id, {
-        ...selectedUser,
-        eligibleForSupport: nextStatus
-      });
-
-      await fetchUsers();
-    } catch (err) {
-      console.error('Failed to update eligibility:', err);
-      setError(err?.response?.data?.message || 'Failed to update eligibility');
     } finally {
       setActionLoading(false);
     }
@@ -521,7 +480,6 @@ export function UsersManagement() {
                     <th className="px-6 py-4 font-medium">User</th>
                     <th className="px-6 py-4 font-medium">Role</th>
                     <th className="px-6 py-4 font-medium">Location</th>
-                    <th className="px-6 py-4 font-medium">Eligibility</th>
                     <th className="px-6 py-4 font-medium">Verification</th>
                     <th className="px-6 py-4 font-medium">Joined</th>
                     <th className="px-6 py-4 font-medium text-right">Actions</th>
@@ -577,17 +535,6 @@ export function UsersManagement() {
                         <span
                           className={classNames(
                             'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
-                            getStatusBadgeStyle(u.eligibleForSupport)
-                          )}
-                        >
-                          {u.eligibleForSupport}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <span
-                          className={classNames(
-                            'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
                             getStatusBadgeStyle(u.isVerified)
                           )}
                         >
@@ -607,14 +554,6 @@ export function UsersManagement() {
                             title="Edit User"
                           >
                             <Edit2 className="h-4 w-4" />
-                          </button>
-
-                          <button
-                            onClick={() => handleToggleEligibility(u)}
-                            className="text-emerald-600 hover:text-emerald-800 transition-colors"
-                            title={u.eligibleForSupport === 'Eligibile' ? 'Not Eligibile' : 'Eligibile'}
-                          >
-                            <UserCheck className="h-4 w-4" />
                           </button>
 
                           <button
@@ -728,22 +667,6 @@ export function UsersManagement() {
                   placeholder="Community Center A"
                   className="w-full border border-secondary-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-1">
-                  Eligibility
-                </label>
-                <select
-                  value={formData.eligibleForSupport}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, eligibleForSupport: e.target.value }))
-                  }
-                  className="w-full border border-secondary-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white"
-                >
-                  <option value="Eligibile">Eligibile</option>
-                  <option value="Not Eligibile">Not Eligibile</option>
-                </select>
               </div>
 
               <div>
