@@ -42,7 +42,7 @@ export function UsersManagement() {
     email: '',
     role: 'beneficiary',
     location: '',
-    eligibileForSupport: 'Not Eligibile'
+    eligibleForSupport: 'Not Eligibile'
   });
 
   const containerVariants = {
@@ -88,9 +88,9 @@ export function UsersManagement() {
     if (!status) return 'Eligibile';
 
     switch (status.toLowerCase()) {
-      case 'eligibile':
+      case 'eligible':
         return 'Eligibile';
-      case 'notEligibile':
+      case 'noteligible':
         return 'Not Eligibile';
       default:
         return status;
@@ -102,7 +102,7 @@ export function UsersManagement() {
     username: u.username || 'Unnamed User',
     email: u.email || '',
     role: normalizeRole(u.role),
-    eligibileForSupport: normalizeEligibility(u.eligibileForSupport || 'Eligibile'),
+    eligibleForSupport: normalizeEligibility(u.eligibleForSupport || 'Eligibile'),
     joinedDate: u.createdAt || u.joinedDate || new Date().toISOString(),
     location: u.location || 'N/A'
   });
@@ -112,19 +112,35 @@ export function UsersManagement() {
       setLoading(true);
       setError('');
 
+      console.log('Fetching users...');
+      console.log('Current user from auth:', user);
+
       const [profileRes, usersRes] = await Promise.all([
         getUserProfile(),
         getAllUsers()
       ]);
 
-      const profileData = profileRes?.data?.user || profileRes?.data;
-      const usersData = usersRes?.data?.users || usersRes?.data || [];
+      console.log('Profile response:', profileRes);
+      console.log('Users response:', usersRes);
+      console.log('Profile response data:', profileRes.data);
+      console.log('Users response data:', usersRes.data);
+
+      // Backend returns data directly, not nested
+      const profileData = profileRes.data;
+      const usersData = usersRes.data;
+
+      console.log('Extracted profileData:', profileData);
+      console.log('Extracted usersData:', usersData);
+      console.log('Is usersData array?', Array.isArray(usersData));
 
       setMyProfile(profileData || null);
       setUsers(Array.isArray(usersData) ? usersData.map(mapBackendUser) : []);
     } catch (err) {
       console.error('Failed to fetch users:', err);
-      setError(err?.response?.data?.message || 'Failed to load users');
+      console.error('Error response:', err.response);
+      console.error('Error status:', err.response?.status);
+      console.error('Error data:', err.response?.data);
+      setError(err?.response?.data?.message || err.message || 'Failed to load users');
     } finally {
       setLoading(false);
     }
@@ -216,7 +232,7 @@ export function UsersManagement() {
       email: '',
       role: 'beneficiary',
       location: '',
-      eligibileForSupport: 'Not Eligibile'
+      eligibleForSupport: 'Not Eligibile'
     });
     setIsModalOpen(true);
   };
@@ -228,7 +244,7 @@ export function UsersManagement() {
       email: selectedUser.email || '',
       role: selectedUser.role || 'beneficiary',
       location: selectedUser.location || '',
-      eligibileForSupport: selectedUser.eligibileForSupport || 'Not Eligibile'
+      eligibleForSupport: selectedUser.eligibleForSupport || 'Not Eligibile'
     });
     setIsModalOpen(true);
   };
@@ -243,7 +259,7 @@ export function UsersManagement() {
         email: formData.email,
         role: formData.role,
         location: formData.location,
-        eligibileForSupport: formData.eligibileForSupport
+        eligibleForSupport: formData.eligibleForSupport
       };
 
       if (editingUser) {
@@ -286,17 +302,17 @@ export function UsersManagement() {
       setError('');
 
       const nextStatus =
-        selectedUser.status === 'Active' ? 'Inactive' : 'Active';
+        selectedUser.eligibleForSupport === 'Eligibile' ? 'Not Eligibile' : 'Eligibile';
 
       await updateUserByAdmin(selectedUser.id, {
         ...selectedUser,
-        status: nextStatus
+        eligibleForSupport: nextStatus
       });
 
       await fetchUsers();
     } catch (err) {
-      console.error('Failed to update status:', err);
-      setError(err?.response?.data?.message || 'Failed to update status');
+      console.error('Failed to update eligibility:', err);
+      setError(err?.response?.data?.message || 'Failed to update eligibility');
     } finally {
       setActionLoading(false);
     }
@@ -531,15 +547,11 @@ export function UsersManagement() {
                         <span
                           className={classNames(
                             'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
-                            getStatusBadgeStyle(u.eligibileForSupport)
+                            getStatusBadgeStyle(u.eligibleForSupport)
                           )}
                         >
-                          {u.status}
+                          {u.eligibleForSupport}
                         </span>
-                      </td>
-
-                      <td className="px-6 py-4 text-secondary-600 text-sm">
-                        {formatDate(u.joinedDate)}
                       </td>
 
                       <td className="px-6 py-4 text-right">
@@ -555,7 +567,7 @@ export function UsersManagement() {
                           <button
                             onClick={() => handleToggleStatus(u)}
                             className="text-emerald-600 hover:text-emerald-800 transition-colors"
-                            title={u.eligibileForSupport === 'Eligibile' ? 'Not Eligibile' : 'Eligibile'}
+                            title={u.eligibleForSupport === 'Eligibile' ? 'Not Eligibile' : 'Eligibile'}
                           >
                             <UserCheck className="h-4 w-4" />
                           </button>
@@ -674,19 +686,6 @@ export function UsersManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-1">
-                  Eligibility
-                </label>
-                <select
-                  value={formData.eligibileForSupport}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, eligibileForSupport: e.target.value }))
-                  }
-                  className="w-full border border-secondary-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white"
-                >
-                  <option value="Eligibile">Eligibile</option>
-                  <option value="Not Eligibile">Not Eligibile</option>
-                </select>
               </div>
 
               <div className="flex gap-3 pt-4">
