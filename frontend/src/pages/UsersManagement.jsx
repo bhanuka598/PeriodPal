@@ -42,7 +42,8 @@ export function UsersManagement() {
     email: '',
     role: 'beneficiary',
     location: '',
-    eligibleForSupport: 'Not Eligibile'
+    eligibleForSupport: 'Not Eligibile',
+    isVerified: 'Not Verified'
   });
 
   const containerVariants = {
@@ -84,17 +85,41 @@ export function UsersManagement() {
     }
   };
 
-  const normalizeEligibility = (status) => {
-    if (!status) return 'Eligibile';
+  const normalizeEligibility = (eligibleForSupport) => {
+    if (!eligibleForSupport) return 'Eligibile';
 
-    switch (status.toLowerCase()) {
+    switch (eligibleForSupport.toLowerCase()) {
       case 'eligible':
         return 'Eligibile';
       case 'noteligible':
         return 'Not Eligibile';
       default:
-        return status;
+        return eligibleForSupport;
     }
+  };
+
+  const normalizeVerification = (isVerified) => {
+    if (isVerified === undefined || isVerified === null) return 'Not Verified';
+    
+    // Handle boolean values from backend
+    if (typeof isVerified === 'boolean') {
+      return isVerified ? 'Verified' : 'Not Verified';
+    }
+    
+    // Handle string values
+    if (typeof isVerified === 'string') {
+      switch (isVerified.toLowerCase()) {
+        case 'verified':
+          return 'Verified';
+        case 'notverified':
+        case 'not_verified':
+          return 'Not Verified';
+        default:
+          return isVerified;
+      }
+    }
+    
+    return 'Not Verified';
   };
 
   const mapBackendUser = (u) => ({
@@ -103,6 +128,7 @@ export function UsersManagement() {
     email: u.email || '',
     role: normalizeRole(u.role),
     eligibleForSupport: normalizeEligibility(u.eligibleForSupport || 'Eligibile'),
+    isVerified: normalizeVerification(u.isVerified || 'Verified'),
     joinedDate: u.createdAt || u.joinedDate || new Date().toISOString(),
     location: u.location || 'N/A'
   });
@@ -232,7 +258,8 @@ export function UsersManagement() {
       email: '',
       role: 'beneficiary',
       location: '',
-      eligibleForSupport: 'Not Eligibile'
+      eligibleForSupport: 'Not Eligibile',
+      isVerified: 'Not Verified'
     });
     setIsModalOpen(true);
   };
@@ -244,7 +271,8 @@ export function UsersManagement() {
       email: selectedUser.email || '',
       role: selectedUser.role || 'beneficiary',
       location: selectedUser.location || '',
-      eligibleForSupport: selectedUser.eligibleForSupport || 'Not Eligibile'
+      eligibleForSupport: selectedUser.eligibleForSupport || 'Not Eligibile',
+      isVerified: selectedUser.isVerified || 'Not Verified'
     });
     setIsModalOpen(true);
   };
@@ -259,7 +287,8 @@ export function UsersManagement() {
         email: formData.email,
         role: formData.role,
         location: formData.location,
-        eligibleForSupport: formData.eligibleForSupport
+        eligibleForSupport: formData.eligibleForSupport,
+        isVerified: formData.isVerified
       };
 
       if (editingUser) {
@@ -296,7 +325,7 @@ export function UsersManagement() {
     }
   };
 
-  const handleToggleStatus = async (selectedUser) => {
+  const handleToggleEligibility = async (selectedUser) => {
     try {
       setActionLoading(true);
       setError('');
@@ -493,6 +522,7 @@ export function UsersManagement() {
                     <th className="px-6 py-4 font-medium">Role</th>
                     <th className="px-6 py-4 font-medium">Location</th>
                     <th className="px-6 py-4 font-medium">Eligibility</th>
+                    <th className="px-6 py-4 font-medium">Verification</th>
                     <th className="px-6 py-4 font-medium">Joined</th>
                     <th className="px-6 py-4 font-medium text-right">Actions</th>
                   </tr>
@@ -554,6 +584,21 @@ export function UsersManagement() {
                         </span>
                       </td>
 
+                      <td className="px-6 py-4">
+                        <span
+                          className={classNames(
+                            'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
+                            getStatusBadgeStyle(u.isVerified)
+                          )}
+                        >
+                          {u.isVerified}
+                        </span>
+                      </td>
+
+                      <td className="px-6 py-4 text-secondary-600 text-sm">
+                        {formatDate(u.joinedDate)}
+                      </td>
+
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-3">
                           <button
@@ -565,7 +610,7 @@ export function UsersManagement() {
                           </button>
 
                           <button
-                            onClick={() => handleToggleStatus(u)}
+                            onClick={() => handleToggleEligibility(u)}
                             className="text-emerald-600 hover:text-emerald-800 transition-colors"
                             title={u.eligibleForSupport === 'Eligibile' ? 'Not Eligibile' : 'Eligibile'}
                           >
@@ -586,7 +631,7 @@ export function UsersManagement() {
 
                   {filteredUsers.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-secondary-500">
+                      <td colSpan={7} className="px-6 py-12 text-center text-secondary-500">
                         <div className="flex flex-col items-center justify-center">
                           <Users className="h-10 w-10 text-secondary-300 mb-3" />
                           <p>No users found matching your criteria.</p>
@@ -686,6 +731,35 @@ export function UsersManagement() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-1">
+                  Eligibility
+                </label>
+                <select
+                  value={formData.eligibleForSupport}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, eligibleForSupport: e.target.value }))
+                  }
+                  className="w-full border border-secondary-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white"
+                >
+                  <option value="Eligibile">Eligibile</option>
+                  <option value="Not Eligibile">Not Eligibile</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-1">
+                  Verification
+                </label>
+                <select
+                  value={formData.isVerified}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, isVerified: e.target.value }))
+                  }
+                  className="w-full border border-secondary-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white"
+                >
+                  <option value="Verified">Verified</option>
+                  <option value="Not Verified">Not Verified</option>
+                </select>
               </div>
 
               <div className="flex gap-3 pt-4">
