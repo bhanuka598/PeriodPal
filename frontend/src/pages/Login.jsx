@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
-import { loginUser } from "../services/userService";
+import { useAuth } from "../context/AuthContext";
 
 export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { login, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -18,33 +18,19 @@ export function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setIsSubmitting(true);
+
+    console.log('Login attempt:', { email });
 
     try {
-      const res = await loginUser({ email, password });
-
-      // Adjust these keys if your backend response differs
-      const data = res.data;
-      const token = data.token || data.accessToken;
-      const user = data.user || data.data || null;
-
-      if (!token) {
-        throw new Error("Token not received from server");
-      }
-
-      localStorage.setItem("token", token);
-      if (user) {
-        localStorage.setItem("user", JSON.stringify(user));
-      }
-
+      await login(email, password);
+      console.log('Login successful, navigating to:', from);
       navigate(from);
     } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-          "Invalid email or password. Please try again."
-      );
-    } finally {
-      setIsSubmitting(false);
+      console.error('Login error:', err);
+      const errorMessage = err?.response?.data?.message || 
+                          err?.message || 
+                          "Invalid email or password. Please try again.";
+      setError(errorMessage);
     }
   };
 
@@ -120,10 +106,10 @@ export function Login() {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={loading}
               className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? (
+              {loading ? (
                 <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>

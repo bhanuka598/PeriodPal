@@ -42,7 +42,6 @@ export function UsersManagement() {
     email: '',
     role: 'beneficiary',
     location: '',
-    phone: '',
     eligibileForSupport: 'Not Eligibile'
   });
 
@@ -85,7 +84,7 @@ export function UsersManagement() {
     }
   };
 
-  const normalizeStatus = (status) => {
+  const normalizeEligibility = (status) => {
     if (!status) return 'Eligibile';
 
     switch (status.toLowerCase()) {
@@ -103,10 +102,9 @@ export function UsersManagement() {
     username: u.username || 'Unnamed User',
     email: u.email || '',
     role: normalizeRole(u.role),
-    status: normalizeStatus(u.status || 'Active'),
+    eligibileForSupport: normalizeEligibility(u.eligibileForSupport || 'Eligibile'),
     joinedDate: u.createdAt || u.joinedDate || new Date().toISOString(),
-    location: u.location || 'N/A',
-    phone: u.phone || ''
+    location: u.location || 'N/A'
   });
 
   const fetchUsers = async () => {
@@ -172,12 +170,10 @@ export function UsersManagement() {
 
   const getStatusBadgeStyle = (status) => {
     switch (status) {
-      case 'Active':
+      case 'Eligibile':
         return 'bg-emerald-100 text-emerald-700';
-      case 'Inactive':
+      case 'Not Eligibile':
         return 'bg-secondary-100 text-secondary-600';
-      case 'Suspended':
-        return 'bg-red-100 text-red-700';
       default:
         return 'bg-secondary-100 text-secondary-700';
     }
@@ -220,8 +216,7 @@ export function UsersManagement() {
       email: '',
       role: 'beneficiary',
       location: '',
-      phone: '',
-      status: 'Active'
+      eligibileForSupport: 'Not Eligibile'
     });
     setIsModalOpen(true);
   };
@@ -233,8 +228,7 @@ export function UsersManagement() {
       email: selectedUser.email || '',
       role: selectedUser.role || 'beneficiary',
       location: selectedUser.location || '',
-      phone: selectedUser.phone || '',
-      status: selectedUser.status || 'Active'
+      eligibileForSupport: selectedUser.eligibileForSupport || 'Not Eligibile'
     });
     setIsModalOpen(true);
   };
@@ -249,8 +243,7 @@ export function UsersManagement() {
         email: formData.email,
         role: formData.role,
         location: formData.location,
-        phone: formData.phone,
-        status: formData.status
+        eligibileForSupport: formData.eligibileForSupport
       };
 
       if (editingUser) {
@@ -318,8 +311,7 @@ export function UsersManagement() {
 
       await updateUserProfile({
         username: myProfile.username,
-        location: myProfile.location,
-        phone: myProfile.phone
+        location: myProfile.location
       });
 
       await fetchUsers();
@@ -484,7 +476,7 @@ export function UsersManagement() {
                     <th className="px-6 py-4 font-medium">User</th>
                     <th className="px-6 py-4 font-medium">Role</th>
                     <th className="px-6 py-4 font-medium">Location</th>
-                    <th className="px-6 py-4 font-medium">Status</th>
+                    <th className="px-6 py-4 font-medium">Eligibility</th>
                     <th className="px-6 py-4 font-medium">Joined</th>
                     <th className="px-6 py-4 font-medium text-right">Actions</th>
                   </tr>
@@ -539,7 +531,7 @@ export function UsersManagement() {
                         <span
                           className={classNames(
                             'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
-                            getStatusBadgeStyle(u.status)
+                            getStatusBadgeStyle(u.eligibileForSupport)
                           )}
                         >
                           {u.status}
@@ -563,7 +555,7 @@ export function UsersManagement() {
                           <button
                             onClick={() => handleToggleStatus(u)}
                             className="text-emerald-600 hover:text-emerald-800 transition-colors"
-                            title={u.status === 'Active' ? 'Deactivate' : 'Activate'}
+                            title={u.eligibileForSupport === 'Eligibile' ? 'Not Eligibile' : 'Eligibile'}
                           >
                             <UserCheck className="h-4 w-4" />
                           </button>
@@ -683,33 +675,17 @@ export function UsersManagement() {
 
               <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-1">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                  }
-                  placeholder="+94 71 234 5678"
-                  className="w-full border border-secondary-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-1">
-                  Status
+                  Eligibility
                 </label>
                 <select
-                  value={formData.status}
+                  value={formData.eligibileForSupport}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, status: e.target.value }))
+                    setFormData((prev) => ({ ...prev, eligibileForSupport: e.target.value }))
                   }
                   className="w-full border border-secondary-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white"
                 >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                  <option value="Suspended">Suspended</option>
+                  <option value="Eligibile">Eligibile</option>
+                  <option value="Not Eligibile">Not Eligibile</option>
                 </select>
               </div>
 

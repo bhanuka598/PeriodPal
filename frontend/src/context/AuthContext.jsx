@@ -39,15 +39,22 @@ export function AuthProvider({ children }) {
       const response = await loginUser({ email, password });
       const data = response.data;
 
-      const authToken = data.token || data.accessToken;
-      const authUser = data.user || data.data;
+      console.log('AuthContext login response:', data);
+
+      // Backend returns data directly, not wrapped in nested properties
+      const authToken = data.token;
+      const authUser = {
+        _id: data._id,
+        email: data.email,
+        role: data.role
+      };
 
       if (!authToken) {
         throw new Error('Authentication token not received from server');
       }
 
       setToken(authToken);
-      setUser(authUser || null);
+      setUser(authUser);
 
       localStorage.setItem('token', authToken);
 
