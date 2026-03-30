@@ -34,7 +34,8 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
     '/requests',
     '/inventory',
     '/donations',
-    '/users'
+    '/users',
+    '/profile'
   ];
 
   const isDashboard = systemPaths.some((path) =>
@@ -140,21 +141,27 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
                     </p>
                   </div>
 
-                  <a
-                    href="#profile"
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50 hover:text-primary-600 transition-colors"
+                  <button
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      navigate('/profile');
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50 hover:text-primary-600 transition-colors w-full text-left"
                   >
                     <UserIcon className="h-4 w-4" />
                     My Profile
-                  </a>
+                  </button>
 
-                  <a
-                    href="#settings"
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50 hover:text-primary-600 transition-colors"
+                  <button
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      navigate('/settings');
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50 hover:text-primary-600 transition-colors w-full text-left"
                   >
                     <Settings className="h-4 w-4" />
                     Settings
-                  </a>
+                  </button>
 
                   <div className="h-px bg-secondary-100 my-1"></div>
 
