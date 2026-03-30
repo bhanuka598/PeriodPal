@@ -80,7 +80,7 @@ export function App() {
             <Route
               path="/records"
               element={
-                <ProtectedRoute allowedRoles={['user', 'admin']}>
+                <ProtectedRoute allowedRoles={['beneficiary', 'admin']}>
                   <MenstrualRecords />
                 </ProtectedRoute>
               }

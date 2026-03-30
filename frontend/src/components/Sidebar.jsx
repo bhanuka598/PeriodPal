@@ -26,13 +26,13 @@ export function Sidebar({ isOpen, closeSidebar }) {
         name: 'Dashboard',
         path: '/dashboard',
         icon: LayoutDashboard,
-        roles: ['user', 'ngo', 'donor', 'admin']
+        roles: ['beneficiary', 'ngo', 'donor', 'admin']
       },
       {
         name: 'Menstrual Records',
         path: '/records',
         icon: CalendarHeart,
-        roles: ['user', 'admin']
+        roles: ['beneficiary', 'admin']
       },
       {
         name: 'Inventory',
