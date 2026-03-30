@@ -259,6 +259,13 @@ export function Register() {
                     className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl"
                   />
                 </div>
+                <div className="flex items-center justify-between mt-1">
+                  {passwordStrength && (
+                    <p className={`text-xs mt-1 ${passwordMatch.color}`}>
+                      {passwordMatch.match}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
