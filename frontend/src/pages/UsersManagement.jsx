@@ -561,7 +561,7 @@ export function UsersManagement() {
                         <div className="flex items-center justify-end gap-3">
                           <button
                             onClick={() => openEditModal(u)}
-                            className="text-primary-600 hover:text-primary-800 transition-colors"
+                            className="text-blue-600 hover:text-blue-800 transition-colors"
                             title="Edit User"
                           >
                             <Edit2 className="h-4 w-4" />
