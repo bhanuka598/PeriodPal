@@ -10,6 +10,10 @@ import {
   Users,
   ShieldCheck,
   AlertCircle,
+  MapPin,
+  UserCircle,
+  CheckCircle,
+  BadgeCheck
 } from "lucide-react";
 import { registerUser } from "../services/userService";
 import { classNames } from "../utils/helpers";
@@ -130,7 +134,7 @@ export function Register() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-1.5">
-                  Full Name
+                  Full Name *
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-5 w-5 text-secondary-400" />
@@ -147,7 +151,7 @@ export function Register() {
 
               <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-1.5">
-                  Email Address (Gmail only)
+                  Email Address *
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-5 w-5 text-secondary-400" />
@@ -167,7 +171,7 @@ export function Register() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="text-sm font-medium text-secondary-700">
-                  Password (min 8 chars)
+                  Password *
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-5 w-5 text-secondary-400" />
@@ -186,7 +190,7 @@ export function Register() {
 
               <div>
                 <label className="text-sm font-medium text-secondary-700">
-                  Confirm Password
+                  Confirm Password *
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-5 w-5 text-secondary-400" />
@@ -206,57 +210,69 @@ export function Register() {
                 <label className="block text-sm font-medium text-secondary-700 mb-1.5">
                   Location *
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
-                  placeholder="City, Country"
-                />
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 h-5 w-5 text-secondary-400" />
+                  <input
+                    type="text"
+                    required
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
+                    placeholder="City"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-1.5">
                   Avatar URL (Optional)
                 </label>
-                <input
-                  type="url"
-                  value={avatar}
-                  onChange={(e) => setAvatar(e.target.value)}
-                  className="w-full py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
-                  placeholder="https://example.com/avatar.jpg"
-                />
+                <div className="relative">
+                  <UserCircle className="absolute left-3 top-3 h-5 w-5 text-secondary-400" />
+                  <input
+                    type="file"
+                    value={avatar}
+                    onChange={(e) => setAvatar(e.target.value)}
+                    className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
+                    placeholder="Upload avatar"
+                  />
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-1.5">
-                  Eligibility for Support
+                  Eligibility for Support *
                 </label>
-                <select
-                  value={eligibleForSupport}
-                  onChange={(e) => setEligibleForSupport(e.target.value === 'true')}
-                  className="w-full py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
-                >
-                  <option value={false}>Not Eligible</option>
-                  <option value={true}>Eligible</option>
-                </select>
+                <div className="relative">
+                  <CheckCircle className="absolute left-3 top-3 h-5 w-5 text-secondary-400" />
+                  <select
+                    value={eligibleForSupport}
+                    onChange={(e) => setEligibleForSupport(e.target.value === 'true')}
+                    className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
+                  >
+                    <option value={false}>Not Eligible</option>
+                    <option value={true}>Eligible</option>
+                  </select>
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-1.5">
-                  Verification Status
+                  Verification Status *
                 </label>
-                <select
-                  value={isVerified}
-                  onChange={(e) => setIsVerified(e.target.value === 'true')}
-                  className="w-full py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
-                >
-                  <option value={false}>Not Verified</option>
-                  <option value={true}>Verified</option>
-                </select>
+                <div className="relative">
+                  <BadgeCheck className="absolute left-3 top-3 h-5 w-5 text-secondary-400" />
+                  <select
+                    value={isVerified}
+                    onChange={(e) => setIsVerified(e.target.value === 'true')}
+                    className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
+                  >
+                    <option value={false}>Not Verified</option>
+                    <option value={true}>Verified</option>
+                  </select>
+                </div>
               </div>
             </div>
 
