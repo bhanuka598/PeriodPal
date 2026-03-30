@@ -5,7 +5,7 @@ const generateToken = require("../utils/generateToken");
 exports.registerUser = async (req, res) => {
     try {
         console.log('Register request body:', req.body);
-        const { username, email, password, role, location, eligibileForSupport } = req.body;
+        const { username, email, password, role, location, eligibleForSupport, isVerified, avatar } = req.body;
 
         // Validate required fields
         if (!username || !email || !password || !role || !location) {
@@ -77,7 +77,9 @@ exports.registerUser = async (req, res) => {
             password,
             role,
             location,
-            eligibileForSupport: eligibileForSupport || false
+            eligibleForSupport: eligibleForSupport || false,
+            isVerified: isVerified || false,
+            avatar: avatar || undefined
         });
 
         console.log('User created successfully:', { id: user._id, email: user.email });
@@ -124,14 +126,20 @@ exports.registerUser = async (req, res) => {
 exports.loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
+        
+        console.log('Login attempt:', { email, passwordLength: password?.length });
 
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: email.toLowerCase() });
+        
+        console.log('User found:', user ? { id: user._id, email: user.email } : 'No user found');
 
         if (!user) {
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
         const isMatch = await user.matchPassword(password);
+        
+        console.log('Password match:', isMatch);
 
         if (!isMatch) {
             return res.status(401).json({ message: "Invalid email or password" });
@@ -145,6 +153,7 @@ exports.loginUser = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('Login error:', error);
         res.status(500).json({ message: error.message });
     }
 };

@@ -20,6 +20,10 @@ export function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState("beneficiary");
+  const [location, setLocation] = useState(""); // Required field
+  const [eligibleForSupport, setEligibleForSupport] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [avatar, setAvatar] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,10 +44,14 @@ export function Register() {
 
     try {
       const res = await registerUser({
-        name,
+        username: name,
         email,
         password,
         role,
+        location,
+        eligibleForSupport,
+        isVerified,
+        avatar: avatar || undefined
       });
 
       setSuccess(res?.data?.message || "Registration successful");
@@ -139,7 +147,7 @@ export function Register() {
 
               <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-1.5">
-                  Email Address
+                  Email Address (Gmail only)
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-5 w-5 text-secondary-400" />
@@ -149,28 +157,31 @@ export function Register() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
-                    placeholder="you@example.com"
+                    placeholder="your@gmail.com"
                   />
                 </div>
+                <p className="text-xs text-secondary-500 mt-1">Only Gmail addresses are supported</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="text-sm font-medium text-secondary-700">
-                  Password
+                  Password (min 8 chars)
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-5 w-5 text-secondary-400" />
                   <input
                     type="password"
                     required
-                    minLength={6}
+                    minLength={8}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl"
+                    placeholder="Min 8 characters"
                   />
                 </div>
+                <p className="text-xs text-secondary-500 mt-1">Must include uppercase, lowercase, number & special character</p>
               </div>
 
               <div>
@@ -187,6 +198,65 @@ export function Register() {
                     className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl"
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-1.5">
+                  Location *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
+                  placeholder="City, Country"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-1.5">
+                  Avatar URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={avatar}
+                  onChange={(e) => setAvatar(e.target.value)}
+                  className="w-full py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
+                  placeholder="https://example.com/avatar.jpg"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-1.5">
+                  Eligibility for Support
+                </label>
+                <select
+                  value={eligibleForSupport}
+                  onChange={(e) => setEligibleForSupport(e.target.value === 'true')}
+                  className="w-full py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
+                >
+                  <option value={false}>Not Eligible</option>
+                  <option value={true}>Eligible</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-1.5">
+                  Verification Status
+                </label>
+                <select
+                  value={isVerified}
+                  onChange={(e) => setIsVerified(e.target.value === 'true')}
+                  className="w-full py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
+                >
+                  <option value={false}>Not Verified</option>
+                  <option value={true}>Verified</option>
+                </select>
               </div>
             </div>
 

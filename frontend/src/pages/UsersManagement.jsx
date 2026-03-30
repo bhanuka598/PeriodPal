@@ -480,6 +480,7 @@ export function UsersManagement() {
                     <th className="px-6 py-4 font-medium">User</th>
                     <th className="px-6 py-4 font-medium">Role</th>
                     <th className="px-6 py-4 font-medium">Location</th>
+                    <th className="px-6 py-4 font-medium">Eligibility</th>
                     <th className="px-6 py-4 font-medium">Verification</th>
                     <th className="px-6 py-4 font-medium">Joined</th>
                     <th className="px-6 py-4 font-medium text-right">Actions</th>
@@ -535,6 +536,17 @@ export function UsersManagement() {
                         <span
                           className={classNames(
                             'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
+                            getStatusBadgeStyle(u.eligibleForSupport)
+                          )}
+                        >
+                          {u.eligibleForSupport}
+                        </span>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <span
+                          className={classNames(
+                            'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
                             getStatusBadgeStyle(u.isVerified)
                           )}
                         >
@@ -548,6 +560,21 @@ export function UsersManagement() {
 
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-3">
+                          <button
+                            onClick={() => handleToggleEligibility(u)}
+                            disabled={actionLoading}
+                            className={classNames(
+                              'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors',
+                              u.eligibleForSupport === 'Eligibile'
+                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                : 'bg-secondary-100 text-secondary-600 hover:bg-secondary-200'
+                            )}
+                            title={u.eligibleForSupport === 'Eligibile' ? 'Mark as Not Eligible' : 'Mark as Eligible'}
+                          >
+                            <UserCheck className="h-3 w-3" />
+                            {u.eligibleForSupport === 'Eligibile' ? 'Eligible' : 'Not Eligible'}
+                          </button>
+
                           <button
                             onClick={() => openEditModal(u)}
                             className="text-primary-600 hover:text-primary-800 transition-colors"
