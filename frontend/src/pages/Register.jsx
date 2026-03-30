@@ -31,8 +31,58 @@ export function Register() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState("");
+  const [passwordMatch, setPasswordMatch] = useState("");
 
   const navigate = useNavigate();
+
+  const checkPasswordStrength = (password) => {
+    if (!password) return { strength: "", color: "text-gray-500" };
+    
+    let strength = 0;
+    const checks = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      numbers: /\d/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+    
+    strength = Object.values(checks).filter(Boolean).length;
+    
+    if (strength <= 2) {
+      return { strength: "Weak", color: "text-red-500" };
+    } else if (strength <= 4) {
+      return { strength: "Average", color: "text-yellow-500" };
+    } else {
+      return { strength: "Strong", color: "text-green-500" };
+    }
+  };
+
+  const checkPasswordMatch = (password, confirmPassword) => {
+    if (!confirmPassword) return { match: "", color: "text-gray-500" };
+    
+    if (password === confirmPassword) {
+      return { match: "Passwords match", color: "text-green-500" };
+    } else {
+      return { match: "Passwords do not match", color: "text-red-500" };
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    setPasswordStrength(checkPasswordStrength(newPassword));
+    if (confirmPassword) {
+      setPasswordMatch(checkPasswordMatch(newPassword, confirmPassword));
+    }
+  };
+
+  const handleConfirmPasswordChange = (e) => {
+    const newConfirmPassword = e.target.value;
+    setConfirmPassword(newConfirmPassword);
+    setPasswordMatch(checkPasswordMatch(password, newConfirmPassword));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -180,12 +230,19 @@ export function Register() {
                     required
                     minLength={8}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={handlePasswordChange}
                     className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl"
                     placeholder="Min 8 characters"
                   />
                 </div>
-                <p className="text-xs text-secondary-500 mt-1">Must include uppercase, lowercase, number & special character</p>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs text-secondary-500">Must include uppercase, lowercase, number & special character</p>
+                  {passwordStrength && (
+                    <span className={`text-xs font-medium ${passwordStrength.color}`}>
+                      {passwordStrength.strength}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -198,7 +255,7 @@ export function Register() {
                     type="password"
                     required
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={handleConfirmPasswordChange}
                     className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl"
                   />
                 </div>
