@@ -334,26 +334,8 @@ export function UsersManagement() {
             Users Management
           </h1>
           <p className="text-secondary-500 mt-1">
-            Manage beneficiaries, NGOs, and Donors.
+            Manage Admins, Beneficiaries, NGOs, and Donors.
           </p>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={handleUpdateMyProfile}
-            disabled={actionLoading || !myProfile}
-            className="flex items-center justify-center gap-2 bg-white border border-secondary-200 text-secondary-700 py-2.5 px-5 rounded-xl font-medium transition-colors shadow-sm disabled:opacity-60"
-          >
-            Update My Profile
-          </button>
-
-          <button
-            onClick={openAddModal}
-            className="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white py-2.5 px-5 rounded-xl font-medium transition-colors shadow-sm shadow-primary-500/20"
-          >
-            <Plus className="h-5 w-5" />
-            Add User
-          </button>
         </div>
       </div>
 
