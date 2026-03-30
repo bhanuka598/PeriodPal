@@ -16,6 +16,7 @@ import { MenstrualRecords } from './pages/MenstrualRecords';
 import { Inventory } from './pages/Inventory';
 import { Donations } from './pages/Donations';
 import { UsersManagement } from './pages/UsersManagement';
+import { GoogleCallback } from './pages/GoogleCallback';
 
 function PublicLayout() {
   const location = useLocation();
@@ -64,6 +65,7 @@ export function App() {
           {/* Auth pages */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
           {/* Protected system pages */}
           <Route

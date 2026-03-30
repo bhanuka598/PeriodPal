@@ -32,11 +32,16 @@ export function AuthProvider({ children }) {
     initializeAuth();
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email, password, isGoogleUser = false) => {
     setLoading(true);
 
     try {
-      const response = await loginUser({ email, password });
+      let response;
+      if (isGoogleUser) {
+        response = await loginUser({ token: password, email });
+      } else {
+        response = await loginUser({ email, password });
+      }
       const data = response.data;
 
       console.log('AuthContext login response:', data);

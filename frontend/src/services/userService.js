@@ -30,3 +30,8 @@ export const updateUserByAdmin = async (id, data) => {
 export const deleteUserByAdmin = async (id) => {
   return await API.delete(`/users/${id}`);
 };
+
+// Google OAuth
+export const googleOAuthCallback = async (code) => {
+  return await API.post("/users/auth/google", { code });
+};

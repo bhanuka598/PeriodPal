@@ -1,8 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+
+// Google OAuth - uses backend Passport flow
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const REDIRECT_URI = `http://localhost:5000/api/users/google/callback`;
 
 export function Login() {
   const [email, setEmail] = useState("");
@@ -14,6 +18,45 @@ export function Login() {
   const location = useLocation();
 
   const from = location.state?.from?.pathname || "/dashboard";
+
+  // Handle Google OAuth callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const token = urlParams.get('token');
+    const error = urlParams.get('error');
+
+    if (error) {
+      setError('Google authentication failed. Please try again.');
+      window.history.replaceState({}, document.title, '/login');
+      return;
+    }
+
+    if (token) {
+      console.log('Google OAuth token received, storing and navigating...');
+      
+      // Store token
+      localStorage.setItem('token', token);
+      
+      // Set default user data for Google users
+      const googleUser = {
+        email: 'google_user',
+        role: 'beneficiary'
+      };
+      localStorage.setItem('user', JSON.stringify(googleUser));
+      
+      // Navigate to dashboard
+      navigate('/dashboard');
+      
+      // Clean URL
+      window.history.replaceState({}, document.title, '/login');
+    }
+  }, [location.search, navigate]);
+
+  const handleGoogleSignIn = () => {
+    // Use backend's Google OAuth endpoint instead of manual URL
+    console.log('Redirecting to backend Google OAuth...');
+    window.location.href = 'http://localhost:5000/api/users/google';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -119,6 +162,26 @@ export function Login() {
               )}
             </button>
           </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-secondary-200"></div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            className="w-full flex justify-center items-center gap-3 py-3 px-4 border border-secondary-200 rounded-xl shadow-sm text-sm font-medium text-secondary-700 bg-white hover:bg-secondary-50 transition-colors"
+          >
+            {/* Google Logo */}
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google"
+              className="w-5 h-5"
+            />
+            Continue with Google
+          </button>
 
           <div className="mt-8 text-center">
             <p className="text-sm text-secondary-600">
