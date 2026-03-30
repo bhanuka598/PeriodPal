@@ -626,6 +626,7 @@ export function UsersManagement() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, username: e.target.value }))
                   }
+                  readOnly
                   placeholder="Jane Doe"
                   className="w-full border border-secondary-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                 />
@@ -641,6 +642,7 @@ export function UsersManagement() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, email: e.target.value }))
                   }
+                  readOnly
                   placeholder="jane@example.com"
                   className="w-full border border-secondary-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                 />
