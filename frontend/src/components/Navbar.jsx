@@ -112,7 +112,7 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
 
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium text-secondary-900 leading-none">
-                  {user?.name}
+                  {user?.username}
                 </p>
                 <p className="text-xs text-secondary-500 mt-1 capitalize">
                   {user?.role}
