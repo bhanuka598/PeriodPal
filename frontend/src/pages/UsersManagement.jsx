@@ -112,6 +112,7 @@ export function UsersManagement() {
     username: u.username || 'Unnamed User',
     email: u.email || '',
     role: normalizeRole(u.role),
+    eligibleForSupport: u.eligibleForSupport ? 'Eligible' : 'Not Eligible',
     isVerified: normalizeVerification(u.isVerified || 'Verified'),
     joinedDate: u.createdAt || u.joinedDate || new Date().toISOString(),
     location: u.location || 'N/A'
@@ -196,10 +197,12 @@ export function UsersManagement() {
 
   const getStatusBadgeStyle = (status) => {
     switch (status) {
-      case 'Eligibile':
+      case 'Eligible':
+      case 'Verified':
         return 'bg-emerald-100 text-emerald-700';
-      case 'Not Eligibile':
-        return 'bg-secondary-100 text-secondary-600';
+      case 'Not Eligible':
+      case 'Not Verified':
+        return 'bg-red-100 text-red-700';
       default:
         return 'bg-secondary-100 text-secondary-700';
     }
@@ -242,7 +245,8 @@ export function UsersManagement() {
       email: '',
       role: '',
       location: '',
-      isVerified: ''
+      eligibleForSupport: 'Not Eligibile',
+      isVerified: 'Not Verified'
     });
     setIsModalOpen(true);
   };
@@ -254,7 +258,8 @@ export function UsersManagement() {
       email: selectedUser.email || '',
       role: selectedUser.role || '',
       location: selectedUser.location || '',
-      isVerified: selectedUser.isVerified || ''
+      eligibleForSupport: selectedUser.eligibleForSupport ? 'Eligible' : 'Not Eligible',
+      isVerified: selectedUser.isVerified ? 'Verified' : 'Not Verified'
     });
     setIsModalOpen(true);
   };
@@ -269,6 +274,7 @@ export function UsersManagement() {
         email: formData.email,
         role: formData.role,
         location: formData.location,
+        eligibleForSupport: formData.eligibleForSupport === 'Eligible',
         isVerified: formData.isVerified === 'Verified'
       };
 
@@ -561,21 +567,6 @@ export function UsersManagement() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-3">
                           <button
-                            onClick={() => handleToggleEligibility(u)}
-                            disabled={actionLoading}
-                            className={classNames(
-                              'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors',
-                              u.eligibleForSupport === 'Eligibile'
-                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                                : 'bg-secondary-100 text-secondary-600 hover:bg-secondary-200'
-                            )}
-                            title={u.eligibleForSupport === 'Eligibile' ? 'Mark as Not Eligible' : 'Mark as Eligible'}
-                          >
-                            <UserCheck className="h-3 w-3" />
-                            {u.eligibleForSupport === 'Eligibile' ? 'Eligible' : 'Not Eligible'}
-                          </button>
-
-                          <button
                             onClick={() => openEditModal(u)}
                             className="text-primary-600 hover:text-primary-800 transition-colors"
                             title="Edit User"
@@ -694,6 +685,22 @@ export function UsersManagement() {
                   placeholder="Community Center A"
                   className="w-full border border-secondary-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-1">
+                  Eligibility for Support
+                </label>
+                <select
+                  value={formData.eligibleForSupport}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, eligibleForSupport: e.target.value }))
+                  }
+                  className="w-full border border-secondary-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white"
+                >
+                  <option value="Eligible">Eligible</option>
+                  <option value="Not Eligible">Not Eligible</option>
+                </select>
               </div>
 
               <div>
