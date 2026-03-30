@@ -5,7 +5,7 @@ const generateToken = require("../utils/generateToken");
 exports.registerUser = async (req, res) => {
     try {
         console.log('Register request body:', req.body);
-        const { username, email, password, role, location, eligibileForSupport } = req.body;
+        const { username, email, password, role, location, eligibleForSupport, isVerified, avatar } = req.body;
 
         // Validate required fields
         if (!username || !email || !password || !role || !location) {
@@ -77,7 +77,9 @@ exports.registerUser = async (req, res) => {
             password,
             role,
             location,
-            eligibileForSupport: eligibileForSupport || false
+            eligibleForSupport: eligibleForSupport || false,
+            isVerified: isVerified || false,
+            avatar: avatar || undefined
         });
 
         console.log('User created successfully:', { id: user._id, email: user.email });
@@ -124,14 +126,20 @@ exports.registerUser = async (req, res) => {
 exports.loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
+        
+        console.log('Login attempt:', { email, passwordLength: password?.length });
 
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: email.toLowerCase() });
+        
+        console.log('User found:', user ? { id: user._id, email: user.email } : 'No user found');
 
         if (!user) {
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
         const isMatch = await user.matchPassword(password);
+        
+        console.log('Password match:', isMatch);
 
         if (!isMatch) {
             return res.status(401).json({ message: "Invalid email or password" });
@@ -145,7 +153,112 @@ exports.loginUser = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('Login error:', error);
         res.status(500).json({ message: error.message });
+    }
+};
+
+// ================= GOOGLE OAUTH =================
+const { google } = require('googleapis');
+
+exports.googleOAuthCallback = async (req, res) => {
+    try {
+        console.log('=== Google OAuth Callback Started ===');
+        console.log('Request URL:', req.url);
+        console.log('Request query:', req.query);
+        
+        const { code } = req.query;
+
+        if (!code) {
+            console.log('No authorization code received');
+            return res.redirect('http://localhost:3000/login?error=missing_code');
+        }
+
+        console.log('Received Google OAuth code:', code);
+        console.log('Environment variables:', {
+            GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? 'SET' : 'NOT_SET',
+            GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'NOT_SET',
+            GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI
+        });
+
+        // Create OAuth2 client with proper configuration
+        const oauth2Client = new google.auth.OAuth2Client(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            process.env.GOOGLE_REDIRECT_URI
+        );
+
+        console.log('OAuth2 client created, exchanging code for tokens...');
+
+        // Exchange authorization code for tokens
+        const { tokens } = await oauth2Client.getToken(code);
+        
+        if (!tokens) {
+            console.log('Failed to exchange code for tokens');
+            return res.redirect('http://localhost:3000/login?error=token_exchange_failed');
+        }
+
+        console.log('Tokens received successfully');
+        oauth2Client.setCredentials(tokens);
+        
+        // Get user info from Google
+        console.log('Getting user info from Google...');
+        const userInfoResponse = await oauth2Client.userinfo.get();
+        const userInfo = userInfoResponse.data;
+
+        console.log('Google user info:', userInfo);
+
+        // Find or create user in database
+        const User = require('../models/User');
+        let user = await User.findOne({ email: userInfo.email });
+
+        if (!user) {
+            console.log('Creating new user for:', userInfo.email);
+            // Create new user if doesn't exist
+            user = await User.create({
+                username: userInfo.name || userInfo.email,
+                email: userInfo.email,
+                googleId: userInfo.id,
+                role: 'beneficiary',
+                location: 'Not specified',
+                eligibleForSupport: false,
+                isVerified: true,
+                avatar: userInfo.picture
+            });
+        } else {
+            console.log('Updating existing user:', userInfo.email);
+            // Update existing user's Google info
+            user.googleId = userInfo.id;
+            user.avatar = userInfo.picture;
+            if (!user.username || user.username === userInfo.email) {
+                user.username = userInfo.name || userInfo.email;
+            }
+            await user.save();
+        }
+
+        // Generate JWT token for the user
+        const jwt = require('jsonwebtoken');
+        const generateToken = (id) => {
+            return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        };
+
+        const token = generateToken(user._id);
+        console.log('JWT token generated for user:', user.email);
+
+        // Redirect to frontend with token
+        const redirectUrl = `http://localhost:3000/login?token=${token}&user=${encodeURIComponent(JSON.stringify({
+            _id: user._id,
+            email: user.email,
+            role: user.role
+        }))}`;
+        
+        console.log('Redirecting to frontend...');
+        res.redirect(redirectUrl);
+
+    } catch (error) {
+        console.error('Google OAuth callback error:', error);
+        console.error('Error stack:', error.stack);
+        res.redirect('http://localhost:3000/login?error=oauth_failed');
     }
 };
 

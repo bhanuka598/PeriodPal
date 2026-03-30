@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Fonts */
+  --font-sans: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-heading: "Poppins", sans-serif;
+
+  /* Old system colors */
+  --color-background: #f8fafc;
+
+  --color-secondary-50: #f8fafc;
+  --color-secondary-100: #f1f5f9;
+  --color-secondary-200: #e2e8f0;
+  --color-secondary-300: #cbd5e1;
+  --color-secondary-400: #94a3b8;
+  --color-secondary-500: #64748b;
+  --color-secondary-600: #475569;
+  --color-secondary-700: #334155;
+  --color-secondary-800: #1e293b;
+  --color-secondary-900: #0f172a;
+
+  --color-primary-50: #fdf2f8;
+  --color-primary-100: #fce7f3;
+  --color-primary-200: #fbcfe8;
+  --color-primary-300: #f9a8d4;
+  --color-primary-400: #f472b6;
+  --color-primary-500: #ec4899;
+  --color-primary-600: #db2777;
+  --color-primary-700: #be185d;
+  --color-primary-800: #9d174d;
+  --color-primary-900: #831843;
+
+  /* New public UI color names mapped to old colors */
+  --color-cream: #f8fafc;          /* = secondary-50 / background */
+  --color-cream-dark: #e2e8f0;     /* = secondary-200 */
+  --color-ink: #0f172a;            /* = secondary-900 */
+  --color-ink-muted: #64748b;      /* = secondary-500 */
+  --color-coral: #ec4899;          /* = primary-500 */
+  --color-coral-dark: #db2777;     /* = primary-600 */
+  --color-blush: #fce7f3;          /* = primary-100 */
+  --color-plum: #831843;           /* = primary-900 */
+
+  /* Shadows */
+  --shadow-warm: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --shadow-soft-lg: 0 18px 45px rgba(15, 23, 42, 0.12);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    margin: 0;
+  }
+
+  body {
+    @apply font-body bg-background text-secondary-800 antialiased selection:bg-coral/30 selection:text-ink;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading text-secondary-900;
+  }
+
+  /* Global scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-cream;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-blush rounded-full border-2 border-cream;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-coral;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--color-secondary-200);
+    border-radius: 9999px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-secondary-300);
+  }
+}

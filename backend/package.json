@@ -21,6 +21,7 @@
     "express": "^5.2.1",
     "express-async-handler": "^1.2.0",
     "express-session": "^1.19.0",
+    "googleapis": "^144.0.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.0",
     "morgan": "^1.10.0",
