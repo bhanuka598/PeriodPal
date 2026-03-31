@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   CalendarHeart,
   Package,
+  ShoppingBag,
   Warehouse,
   HeartHandshake,
   Settings,
@@ -19,20 +20,32 @@ export function Sidebar({ isOpen, closeSidebar }) {
   const { user } = useAuth();
 
   const getLinks = () => {
-    const role = user?.role || 'user';
+    const role = user?.role || 'beneficiary';
 
     const links = [
       {
         name: 'Dashboard',
         path: '/dashboard',
         icon: LayoutDashboard,
-        roles: ['user', 'ngo', 'donor', 'admin']
+        roles: ['user', 'beneficiary', 'ngo', 'donor', 'admin']
       },
       {
         name: 'Menstrual Records',
         path: '/records',
         icon: CalendarHeart,
-        roles: ['user', 'admin']
+        roles: ['user', 'beneficiary', 'admin']
+      },
+      {
+        name: 'Donation products',
+        path: '/admin/products',
+        icon: Package,
+        roles: ['admin']
+      },
+      {
+        name: 'Fund supplies',
+        path: '/shop',
+        icon: ShoppingBag,
+        roles: ['donor']
       },
       {
         name: 'Inventory',

@@ -9,7 +9,8 @@ import {
   Heart,
   Building,
   Users,
-  ShieldCheck
+  ShieldCheck,
+  MapPin
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { classNames } from '../utils/helpers';
@@ -19,7 +20,8 @@ export function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('user');
+  const [role, setRole] = useState('beneficiary');
+  const [location, setLocation] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -38,10 +40,14 @@ export function Register() {
     setIsSubmitting(true);
 
     try {
-      await register(name, email, password, role);
-      navigate('/');
+      await register(name, email, password, role, location, false);
+      navigate('/dashboard');
     } catch (err) {
-      setError('Registration failed. Please try again.');
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.errors?.join?.(', ') ||
+        'Registration failed. Please try again.';
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -63,7 +69,7 @@ export function Register() {
     {
       id: 'donor',
       title: 'Donor',
-      desc: 'Contribute funds',
+      desc: 'Fund & purchase supplies',
       icon: Users
     },
     {
@@ -130,9 +136,29 @@ export function Register() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
-                    placeholder="you@example.com"
+                    placeholder="name@gmail.com"
                   />
                 </div>
+                <p className="text-xs text-secondary-500 mt-1">
+                  Registration requires a Gmail address.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-secondary-700 mb-1.5">
+                City or region
+              </label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-3 h-5 w-5 text-secondary-400" />
+                <input
+                  type="text"
+                  required
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
+                  placeholder="Colombo, Sri Lanka"
+                />
               </div>
             </div>
 
@@ -147,7 +173,7 @@ export function Register() {
                   <input
                     type="password"
                     required
-                    minLength={6}
+                    minLength={8}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-10 py-2.5 border rounded-xl"

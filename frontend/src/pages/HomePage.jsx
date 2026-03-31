@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link, useOutletContext } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowRightIcon,
@@ -38,7 +39,9 @@ const staggerContainer = {
   }
 };
 
-export function HomePage({ setPage }) {
+export function HomePage() {
+  const { setPage } = useOutletContext() || {};
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -86,7 +89,8 @@ export function HomePage({ setPage }) {
                 className="flex flex-wrap items-center gap-4"
               >
                 <button
-                  onClick={() => setPage('contact')}
+                  type="button"
+                  onClick={() => setPage?.('contact')}
                   className="bg-coral text-white px-8 py-4 rounded-full font-medium text-lg hover:bg-coral-dark transition-colors shadow-soft flex items-center gap-2 group"
                 >
                   Request Products
@@ -94,11 +98,20 @@ export function HomePage({ setPage }) {
                 </button>
 
                 <button
-                  onClick={() => setPage('about')}
+                  type="button"
+                  onClick={() => setPage?.('about')}
                   className="bg-white text-ink px-8 py-4 rounded-full font-medium text-lg hover:bg-cream-dark transition-colors shadow-sm border border-blush/50"
                 >
                   Learn More
                 </button>
+
+                <Link
+                  to="/shop"
+                  className="bg-plum text-cream px-8 py-4 rounded-full font-medium text-lg hover:bg-plum/90 transition-colors shadow-soft inline-flex items-center gap-2 border border-white/10"
+                >
+                  <PackageIcon className="w-5 h-5" />
+                  Fund supplies
+                </Link>
               </motion.div>
             </motion.div>
 
@@ -354,13 +367,15 @@ export function HomePage({ setPage }) {
             </p>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
               <button
-                onClick={() => setPage('contact')}
+                type="button"
+                onClick={() => setPage?.('contact')}
                 className="w-full sm:w-auto bg-coral text-white px-8 py-4 rounded-full font-medium text-lg hover:bg-coral-dark transition-colors shadow-soft"
               >
                 Get Involved Today
               </button>
               <button
-                onClick={() => setPage('about')}
+                type="button"
+                onClick={() => setPage?.('about')}
                 className="w-full sm:w-auto bg-white text-ink px-8 py-4 rounded-full font-medium text-lg hover:bg-cream-dark transition-colors border border-coral/20"
               >
                 Read Our Story

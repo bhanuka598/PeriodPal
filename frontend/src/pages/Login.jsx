@@ -25,7 +25,10 @@ export function Login() {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      setError(
+        err?.response?.data?.message ||
+          'Invalid email or password. Please try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -161,6 +164,12 @@ export function Login() {
             <ul className="list-disc pl-4 space-y-1 text-primary-700">
               <li>admin (All users use this password)</li>
             </ul>
+            <p className="mt-3 text-primary-700/90 leading-relaxed">
+              In development, these map to the <strong>first matching role</strong> in your
+              database (e.g. demo admin uses any real <strong>admin</strong> account in
+              MongoDB). Register at least one admin with a @gmail.com address if add-product
+              should work with demo login.
+            </p>
           </div>
         </div>
       </motion.div>

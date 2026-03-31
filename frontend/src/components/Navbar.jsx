@@ -9,8 +9,10 @@ import {
   ChevronDown,
   MenuIcon,
   XIcon,
-  HeartIcon
+  HeartIcon,
+  ShoppingBag
 } from 'lucide-react';
+import { getCart } from '../api/cartApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { getInitials } from '../utils/helpers';
@@ -27,6 +29,7 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
 
   const systemPaths = [
     '/dashboard',
@@ -34,7 +37,8 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
     '/requests',
     '/inventory',
     '/donations',
-    '/users'
+    '/users',
+    '/admin'
   ];
 
   const isDashboard = systemPaths.some((path) =>
@@ -52,8 +56,30 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isDashboard]);
 
+  const refreshCartCount = React.useCallback(async () => {
+    if (isDashboard) return;
+    try {
+      const { data } = await getCart();
+      const n = data.cart?.items?.reduce((s, i) => s + (i.qty || 0), 0) || 0;
+      setCartCount(n);
+    } catch {
+      setCartCount(0);
+    }
+  }, [isDashboard]);
+
+  useEffect(() => {
+    refreshCartCount();
+  }, [location.pathname, refreshCartCount]);
+
+  useEffect(() => {
+    const onCart = () => refreshCartCount();
+    window.addEventListener('periodpal:cart-updated', onCart);
+    return () => window.removeEventListener('periodpal:cart-updated', onCart);
+  }, [refreshCartCount]);
+
   const navLinks = [
     { id: 'home', label: 'Home' },
+    { id: 'shop', label: 'Shop' },
     { id: 'about', label: 'About Us' },
     { id: 'contact', label: 'Contact' }
   ];
@@ -62,6 +88,7 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
     setIsMobileMenuOpen(false);
 
     if (page === 'home') navigate('/');
+    if (page === 'shop') navigate('/shop');
     if (page === 'about') navigate('/about');
     if (page === 'contact') navigate('/contact');
 
@@ -200,7 +227,7 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
             </span>
           </button>
 
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8">
             {navLinks.map((link) => (
               <button
                 key={link.id}
@@ -227,6 +254,21 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
             ))}
 
             <button
+              type="button"
+              onClick={() => navigate('/cart')}
+              className="relative p-2.5 rounded-full text-ink-muted hover:text-coral hover:bg-blush/30 transition-colors focus:outline-none focus:ring-2 focus:ring-coral/40"
+              aria-label="Cart"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[1.125rem] h-[1.125rem] px-1 flex items-center justify-center text-[10px] font-bold bg-coral text-white rounded-full">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
               onClick={() => navigate('/login')}
               className="bg-ink text-white px-6 py-2.5 rounded-full font-medium hover:bg-coral transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-coral focus:ring-offset-2 focus:ring-offset-cream"
             >
@@ -259,6 +301,19 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
               ))}
 
               <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  navigate('/cart');
+                }}
+                className="flex items-center justify-center gap-2 text-ink py-2"
+              >
+                <ShoppingBag className="w-5 h-5 text-coral" />
+                Cart{cartCount > 0 ? ` (${cartCount})` : ''}
+              </button>
+
+              <button
+                type="button"
                 onClick={() => navigate('/login')}
                 className="bg-coral text-white px-4 py-3 rounded-2xl"
               >

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   HeartHandshake,
@@ -73,10 +74,13 @@ export function Donations() {
         </div>
 
         {isDonor && (
-          <button className="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white py-2.5 px-5 rounded-xl font-medium transition-colors shadow-sm shadow-primary-500/20">
+          <Link
+            to="/shop"
+            className="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white py-2.5 px-5 rounded-xl font-medium transition-colors shadow-sm shadow-primary-500/20"
+          >
             <HeartHandshake className="h-5 w-5" />
-            Make a Donation
-          </button>
+            Shop donation products
+          </Link>
         )}
       </div>
 

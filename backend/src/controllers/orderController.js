@@ -146,6 +146,23 @@ exports.getAllOrders = asyncHandler(async (req, res) => {
   res.json({ success: true, orders, count: orders.length });
 });
 
+// GET /api/orders/admin/stats — admin: units purchased across paid orders
+exports.getAdminDonationStats = asyncHandler(async (req, res) => {
+  const paidOrders = await Order.find({ orderStatus: "PAID" }).select("items");
+  let unitsPurchased = 0;
+  for (const o of paidOrders) {
+    unitsPurchased += o.items.reduce(
+      (sum, i) => sum + (Number(i.qty) || 0),
+      0
+    );
+  }
+  res.json({
+    success: true,
+    paidOrdersCount: paidOrders.length,
+    unitsPurchased,
+  });
+});
+
 // GET /api/orders/:id  (Get order by ID)
 exports.getOrderById = async (req, res) => {
   try {
