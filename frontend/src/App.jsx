@@ -87,7 +87,7 @@ export function App() {
           {/* Auth pages */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/auth/google/callback" element={<GoogleCallback />} />
+          {/* <Route path="/auth/google/callback" element={<GoogleCallback />} /> */}
 
           {/* Protected system pages */}
           <Route
