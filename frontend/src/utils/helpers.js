@@ -49,3 +49,26 @@ export function getRelativeTime(dateString) {
 
   return formatDate(date);
 }
+/**
+ * Turns Axios/fetch errors into a short message for the UI.
+ * Network failures (backend not running, wrong URL) get an explicit hint.
+ */
+export function getApiErrorMessage(err, fallback = 'Something went wrong.') {
+  if (!err?.response) {
+    if (
+      err?.code === 'ERR_NETWORK' ||
+      err?.message === 'Network Error' ||
+      String(err?.message || '').includes('Network Error')
+    ) {
+      return 'Cannot reach the API server. Open a terminal in the backend folder and run npm start (or node server.js), then try again. If you use a custom URL, set VITE_API_URL in the frontend .env (e.g. http://localhost:5000/api).';
+    }
+  }
+
+  const data = err?.response?.data;
+  const msg = data?.message;
+  if (typeof msg === 'string' && msg.trim()) return msg;
+  if (Array.isArray(msg) && msg.length) return msg.join(', ');
+  if (typeof data === 'string' && data.trim()) return data;
+
+  return fallback;
+}

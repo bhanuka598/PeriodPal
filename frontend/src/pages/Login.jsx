@@ -69,11 +69,12 @@ export function Login() {
       console.log('Login successful, navigating to:', from);
       navigate(from);
     } catch (err) {
-      console.error('Login error:', err);
-      const errorMessage = err?.response?.data?.message || 
-                          err?.message || 
-                          "Invalid email or password. Please try again.";
-      setError(errorMessage);
+      setError(
+        err?.response?.data?.message ||
+          'Invalid email or password. Please try again.'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

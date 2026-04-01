@@ -9,27 +9,19 @@ import {
   Building,
   Users,
   ShieldCheck,
-  AlertCircle,
-  MapPin,
-  UserCircle,
-  CheckCircle,
-  BadgeCheck
-} from "lucide-react";
-import { registerUser } from "../services/userService";
-import { classNames } from "../utils/helpers";
+  MapPin
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { classNames } from '../utils/helpers';
 
 export function Register() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState("beneficiary");
-  const [location, setLocation] = useState(""); // Required field
-  const [eligibleForSupport, setEligibleForSupport] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
-  const [avatar, setAvatar] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('beneficiary');
+  const [location, setLocation] = useState('');
+  const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("");
   const [passwordMatch, setPasswordMatch] = useState("");
@@ -136,10 +128,10 @@ export function Register() {
       icon: Building,
     },
     {
-      id: "donor",
-      title: "Donor",
-      desc: "Contribute funds",
-      icon: Users,
+      id: 'donor',
+      title: 'Donor',
+      desc: 'Fund & purchase supplies',
+      icon: Users
     },
     {
       id: "admin",
@@ -211,10 +203,29 @@ export function Register() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
-                    placeholder="your@gmail.com"
+                    placeholder="name@gmail.com"
                   />
                 </div>
-                <p className="text-xs text-secondary-500 mt-1">Only Gmail addresses are supported</p>
+                <p className="text-xs text-secondary-500 mt-1">
+                  Registration requires a Gmail address.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-secondary-700 mb-1.5">
+                City or region
+              </label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-3 h-5 w-5 text-secondary-400" />
+                <input
+                  type="text"
+                  required
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50"
+                  placeholder="Colombo, Sri Lanka"
+                />
               </div>
             </div>
 

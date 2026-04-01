@@ -1,5 +1,6 @@
 const config = require("./src/config/config");
 const express = require("express");
+const path = require("path");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const morgan = require("morgan");
@@ -17,8 +18,8 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-guest-id', 'x-demo-login-email'],
   credentials: true
 }));
 app.use(morgan("dev"));
@@ -56,6 +57,8 @@ app.use(passport.session());
 app.get("/", (req, res) => {
   res.send("PeriodPal API is running...");
 });
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/test-email", async (req, res) => {
   try {

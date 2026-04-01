@@ -7,6 +7,9 @@ const {
   updateCart,
   deleteCart 
 } = require("../controllers/cartController");
+const { optionalProtect } = require("../middleware/authMiddleware");
+
+router.use(optionalProtect);
 
 router.get("/", getCart);
 router.get("/summary", getCartSummary);

@@ -101,7 +101,8 @@ export function Dashboard() {
           }
         ];
 
-      default:
+      case 'user':
+      case 'beneficiary':
         return [
           {
             label: 'Current Cycle Day',
@@ -140,10 +141,13 @@ export function Dashboard() {
             bg: 'bg-emerald-100'
           }
         ];
+
+      default:
+        return getStats('beneficiary');
     }
   };
 
-  const stats = getStats(user?.role || 'user');
+  const stats = getStats(user?.role || 'beneficiary');
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -270,7 +274,7 @@ export function Dashboard() {
             <div className="space-y-3">
               <button className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white py-2.5 px-4 rounded-xl">
                 <Plus className="h-4 w-4" />
-                {user?.role === 'user'
+                {user?.role === 'user' || user?.role === 'beneficiary'
                   ? 'Log Period'
                   : user?.role === 'ngo'
                   ? 'Add Inventory'
@@ -278,7 +282,7 @@ export function Dashboard() {
               </button>
 
               <button className="w-full flex items-center justify-center gap-2 bg-primary-50 text-primary-700 py-2.5 px-4 rounded-xl">
-                {user?.role === 'user'
+                {user?.role === 'user' || user?.role === 'beneficiary'
                   ? 'Request Products'
                   : 'View Reports'}
               </button>
