@@ -73,8 +73,6 @@ export function Login() {
         err?.response?.data?.message ||
           'Invalid email or password. Please try again.'
       );
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

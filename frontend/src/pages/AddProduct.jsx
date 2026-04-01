@@ -178,13 +178,13 @@ export default function AddProduct() {
           </div>
 
           <div style={styles.formGroup}>
-            <label>Stock Quantity</label>
+            <label>Needed Quantity</label>
             <input
               type="number"
               name="stockQty"
               value={formData.stockQty}
               onChange={handleChange}
-              placeholder="Enter stock quantity"
+              placeholder="Enter Needed quantity"
               required
               style={styles.input}
             />

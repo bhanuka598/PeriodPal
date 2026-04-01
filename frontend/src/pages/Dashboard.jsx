@@ -51,7 +51,7 @@ export function Dashboard() {
             bg: 'bg-emerald-100'
           },
           {
-            label: 'Low Stock Alerts',
+            label: 'Items Near Goal',
             value: '3',
             icon: AlertCircle,
             trend: '+2',

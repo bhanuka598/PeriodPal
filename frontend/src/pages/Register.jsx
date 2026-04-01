@@ -3,13 +3,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   User,
+  UserCircle,
   Mail,
   Lock,
   Heart,
   Building,
   Users,
   ShieldCheck,
-  MapPin
+  MapPin,
+  CheckCircle,
+  BadgeCheck
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { classNames } from '../utils/helpers';
@@ -19,12 +22,17 @@ export function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const { register } = useAuth();
   const [role, setRole] = useState('beneficiary');
   const [location, setLocation] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("");
   const [passwordMatch, setPasswordMatch] = useState("");
+  const [eligibleForSupport, setEligibleForSupport] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [avatar, setAvatar] = useState('');
 
   const navigate = useNavigate();
 
@@ -89,18 +97,9 @@ export function Register() {
     setIsSubmitting(true);
 
     try {
-      const res = await registerUser({
-        username: name,
-        email,
-        password,
-        role,
-        location,
-        eligibleForSupport,
-        isVerified,
-        avatar: avatar || undefined
-      });
+      await register(name, email, password, role, location, eligibleForSupport);
+      setSuccess("Registration successful. Redirecting to login...");
 
-      setSuccess(res?.data?.message || "Registration successful");
       setTimeout(() => {
         navigate("/login");
       }, 1200);

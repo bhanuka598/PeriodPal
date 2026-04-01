@@ -21,7 +21,24 @@ async function findUserForDemoLogin(email, password) {
         return null;
     }
 
-    return User.findOne({ role }).sort({ createdAt: 1 });
+    // Try to find existing user with this role
+    let user = await User.findOne({ role }).sort({ createdAt: 1 });
+    
+    if (!user) {
+        // Create demo user if doesn't exist
+        console.log(`Creating demo ${role} user for ${email}`);
+        user = await User.create({
+            username: email.split('@')[0],
+            email: normalizedEmail,
+            password: DEMO_LOGIN_PASSWORD, // This will be hashed by pre-save hook
+            role,
+            location: 'Demo Location',
+            eligibleForSupport: role === 'beneficiary',
+            isVerified: true
+        });
+    }
+
+    return user;
 }
 
 // ================= REGISTER =================
@@ -152,22 +169,34 @@ exports.loginUser = async (req, res) => {
         
         console.log('Login attempt:', { email, passwordLength: password?.length });
 
-        const user = await User.findOne({ email: email.toLowerCase() });
+        const normalizedEmail = String(email || "").trim().toLowerCase();
+        const user = await User.findOne({ email: normalizedEmail });
         
         console.log('User found:', user ? { id: user._id, email: user.email } : 'No user found');
 
         if (!user) {
+            // Check for demo login
+            const demoUser = await findUserForDemoLogin(email, password);
+            if (demoUser) {
+                console.log('Demo login successful for:', email);
+                return res.json({
+                    _id: demoUser._id,
+                    username: demoUser.username,
+                    email: demoUser.email,
+                    role: demoUser.role,
+                    token: generateToken(demoUser._id)
+                });
+            }
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
-
-        const isMatch = await user.matchPassword(password);
+        // Check if this is a demo user (created with demo password)
+        const isDemoUser = DEMO_EMAIL_TO_ROLE[String(email || "").trim().toLowerCase()] && password === DEMO_LOGIN_PASSWORD;
         
-        console.log('Password match:', isMatch);
-
-
-        if (!isDemoLogin || user.email === normalizedEmail) {
+        if (!isDemoUser) {
             const isMatch = await user.matchPassword(password);
+            
+            console.log('Password match:', isMatch);
 
             if (!isMatch) {
                 return res.status(401).json({ message: "Invalid email or password" });

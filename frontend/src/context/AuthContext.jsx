@@ -1,5 +1,6 @@
 import React, { useEffect, useState, createContext, useContext } from 'react';
-import { loginUser, registerUser } from '../services/userService';
+import { loginUser, registerUser, } from '../services/userService';
+
 
 const AuthContext = createContext(undefined);
 
@@ -130,7 +131,7 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        const { data } = await userService.login({ email, password });
+        const { data } = await loginUser({ email, password });
         persistSession(data.token, mapUserFromApi(data));
       } catch (error) {
         if (isNetworkError(error)) {
@@ -183,7 +184,7 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        const { data } = await userService.register({
+        const { data } = await registerUser({
           username: name,
           email,
           password,
