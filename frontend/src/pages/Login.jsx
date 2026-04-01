@@ -1,29 +1,73 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+
+// Google OAuth - uses backend Passport flow
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const REDIRECT_URI = `http://localhost:5000/api/users/google/callback`;
 
 export function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const { login } = useAuth();
+  const { login, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/';
+  const from = location.state?.from?.pathname || "/dashboard";
+
+  // Handle Google OAuth callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const token = urlParams.get('token');
+    const error = urlParams.get('error');
+
+    if (error) {
+      setError('Google authentication failed. Please try again.');
+      window.history.replaceState({}, document.title, '/login');
+      return;
+    }
+
+    if (token) {
+      console.log('Google OAuth token received, storing and navigating...');
+      
+      // Store token
+      localStorage.setItem('token', token);
+      
+      // Set default user data for Google users
+      const googleUser = {
+        email: 'google_user',
+        role: 'beneficiary'
+      };
+      localStorage.setItem('user', JSON.stringify(googleUser));
+      
+      // Navigate to dashboard
+      navigate('/dashboard');
+      
+      // Clean URL
+      window.history.replaceState({}, document.title, '/login');
+    }
+  }, [location.search, navigate]);
+
+  const handleGoogleSignIn = () => {
+    // Use backend's Google OAuth endpoint instead of manual URL
+    console.log('Redirecting to backend Google OAuth...');
+    window.location.href = 'http://localhost:5000/api/users/google';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
+    setError("");
+
+    console.log('Login attempt:', { email });
 
     try {
       await login(email, password);
-      navigate('/dashboard');
+      console.log('Login successful, navigating to:', from);
+      navigate(from);
     } catch (err) {
       setError(
         err?.response?.data?.message ||
@@ -55,7 +99,7 @@ export function Login() {
           {error && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               className="bg-red-50 text-red-600 p-3 rounded-lg flex items-center gap-2 text-sm mb-6 border border-red-100"
             >
               <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -88,12 +132,6 @@ export function Login() {
                 <label className="block text-sm font-medium text-secondary-700">
                   Password
                 </label>
-                <a
-                  href="#forgot"
-                  className="text-sm font-medium text-primary-600 hover:text-primary-500"
-                >
-                  Forgot password?
-                </a>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -110,26 +148,12 @@ export function Login() {
               </div>
             </div>
 
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-secondary-300 rounded"
-              />
-              <label
-                htmlFor="remember-me"
-                className="ml-2 block text-sm text-secondary-600"
-              >
-                Remember me
-              </label>
-            </div>
-
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={loading}
               className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? (
+              {loading ? (
                 <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
@@ -140,35 +164,35 @@ export function Login() {
             </button>
           </form>
 
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-secondary-200"></div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            className="w-full flex justify-center items-center gap-3 py-3 px-4 border border-secondary-200 rounded-xl shadow-sm text-sm font-medium text-secondary-700 bg-white hover:bg-secondary-50 transition-colors"
+          >
+            {/* Google Logo */}
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google"
+              className="w-5 h-5"
+            />
+            Continue with Google
+          </button>
+
           <div className="mt-8 text-center">
             <p className="text-sm text-secondary-600">
-              Don't have an account?{' '}
+              Don't have an account?{" "}
               <Link
                 to="/register"
                 className="font-medium text-primary-600 hover:text-primary-500"
               >
                 Register here
               </Link>
-            </p>
-          </div>
-
-          <div className="mt-6 p-4 bg-primary-50 rounded-lg border border-primary-100 text-xs text-primary-800">
-            <p className="font-semibold mb-1">Demo Accounts:</p>
-            <ul className="list-disc pl-4 space-y-1 text-primary-700">
-              <li>admin@test.com (Admin User)</li>
-              <li>user@test.com (Normal User)</li>
-              <li>ngo@test.com (NGO Staff)</li>
-              <li>donor@test.com (Donor)</li>
-            </ul>
-            <p className="font-semibold mb-1">Passwords:</p>
-            <ul className="list-disc pl-4 space-y-1 text-primary-700">
-              <li>admin (All users use this password)</li>
-            </ul>
-            <p className="mt-3 text-primary-700/90 leading-relaxed">
-              In development, these map to the <strong>first matching role</strong> in your
-              database (e.g. demo admin uses any real <strong>admin</strong> account in
-              MongoDB). Register at least one admin with a @gmail.com address if add-product
-              should work with demo login.
             </p>
           </div>
         </div>

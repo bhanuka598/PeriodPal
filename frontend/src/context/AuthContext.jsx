@@ -1,5 +1,5 @@
 import React, { useEffect, useState, createContext, useContext } from 'react';
-import { userService } from '../services/userService';
+import { loginUser, registerUser } from '../services/userService';
 
 const AuthContext = createContext(undefined);
 
@@ -88,12 +88,13 @@ async function mockRegister(name, email, role) {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
 
   const forceMockAuth = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
 
   useEffect(() => {
+
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
 
@@ -118,7 +119,9 @@ export function AuthProvider({ children }) {
   };
 
   const login = async (email, password) => {
+
     setLoading(true);
+
     try {
       if (forceMockAuth) {
         const { token: t, user: u } = await mockLogin(email);
@@ -216,18 +219,14 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     token,
-    isAuthenticated: !!user,
+    isAuthenticated: !!token,
     loading,
     login,
     register,
     logout
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

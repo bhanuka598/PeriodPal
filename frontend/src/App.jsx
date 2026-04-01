@@ -23,12 +23,14 @@ import { MenstrualRecords } from './pages/MenstrualRecords';
 import { Inventory } from './pages/Inventory';
 import { Donations } from './pages/Donations';
 import { UsersManagement } from './pages/UsersManagement';
+
 import { Shop } from './pages/Shop';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { PaymentSuccess } from './pages/PaymentSuccess';
 import { PaymentCancel } from './pages/PaymentCancel';
 import { AdminProducts } from './pages/AdminProducts';
+
 
 function PublicLayout() {
   const location = useLocation();
@@ -85,6 +87,7 @@ export function App() {
           {/* Auth pages */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
           {/* Protected system pages */}
           <Route
@@ -99,7 +102,9 @@ export function App() {
             <Route
               path="/records"
               element={
+
                 <ProtectedRoute allowedRoles={['user', 'beneficiary', 'admin']}>
+
                   <MenstrualRecords />
                 </ProtectedRoute>
               }
@@ -126,7 +131,7 @@ export function App() {
             <Route
               path="/donations"
               element={
-                <ProtectedRoute allowedRoles={['donor']}>
+                <ProtectedRoute allowedRoles={['donor', 'admin']}>
                   <Donations />
                 </ProtectedRoute>
               }

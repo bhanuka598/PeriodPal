@@ -19,6 +19,11 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
+console.log('=== Passport Google OAuth Config ===');
+console.log('callbackURL:', config.google.callbackURL);
+console.log('clientID:', config.google.clientID ? 'SET' : 'NOT_SET');
+console.log('clientSecret:', config.google.clientSecret ? 'SET' : 'NOT_SET');
+
 // Google OAuth Strategy
 passport.use(new GoogleStrategy(
   {

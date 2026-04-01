@@ -27,12 +27,15 @@ export function Sidebar({ isOpen, closeSidebar }) {
         name: 'Dashboard',
         path: '/dashboard',
         icon: LayoutDashboard,
+
         roles: ['user', 'beneficiary', 'ngo', 'donor', 'admin']
+
       },
       {
         name: 'Menstrual Records',
         path: '/records',
         icon: CalendarHeart,
+
         roles: ['user', 'beneficiary', 'admin']
       },
       {
@@ -46,6 +49,7 @@ export function Sidebar({ isOpen, closeSidebar }) {
         path: '/shop',
         icon: ShoppingBag,
         roles: ['donor']
+
       },
       {
         name: 'Inventory',
@@ -57,7 +61,7 @@ export function Sidebar({ isOpen, closeSidebar }) {
         name: 'Donations',
         path: '/donations',
         icon: HeartHandshake,
-        roles: ['donor']
+        roles: ['donor', 'admin']
       },
       {
         name: 'Users',

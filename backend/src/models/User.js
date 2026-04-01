@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
             default: "beneficiary"
         },
         location: { type: String },
-        eligibileForSupport: { type: Boolean, default: false },
+        eligibleForSupport: { type: Boolean, default: false },
         avatar: { type: String },
         isVerified: { type: Boolean, default: false }
     },
