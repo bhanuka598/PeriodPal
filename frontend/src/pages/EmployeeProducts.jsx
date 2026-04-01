@@ -244,7 +244,7 @@ export default function EmployeeProducts() {
             </div>
 
             <div style={styles.formGroup}>
-              <label>Stock Quantity</label>
+              <label>Needed Quantity</label>
               <input
                 type="number"
                 name="stockQty"

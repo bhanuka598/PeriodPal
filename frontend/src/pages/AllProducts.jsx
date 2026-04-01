@@ -69,7 +69,7 @@ export default function AllProducts() {
               onClick={() => handleAddToCart(product)}
               disabled={product.stockQty <= 0}
             >
-              {product.stockQty > 0 ? "Add to Cart" : "Out of Stock"}
+              {product.stockQty > 0 ? "Add to Cart" : "Goal Reached"}
             </button>
           </div>
         ))}

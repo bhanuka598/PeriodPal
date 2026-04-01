@@ -9,6 +9,7 @@ import {
   Layers,
   ShoppingCart,
   AlertCircle,
+  Target,
   TrendingUp,
   TrendingDown,
   Upload,
@@ -115,7 +116,7 @@ export function AdminProducts() {
         bg: 'bg-primary-100'
       },
       {
-        label: 'Units in stock',
+        label: 'Units in Needed',
         value: catalogStats.totalUnits.toLocaleString(),
         icon: Layers,
         trend: 'On hand',
@@ -138,11 +139,12 @@ export function AdminProducts() {
         bg: 'bg-blue-100'
       },
       {
-        label: 'Low / out of stock',
+        label: 'Almost Completed',
         value: catalogStats.lowOrOut.toLocaleString(),
-        icon: AlertCircle,
+        icon: Target,
         trend:
-          catalogStats.lowOrOut > 0 ? 'Restock soon' : 'All healthy',
+          catalogStats.lowOrOut > 0 ? 'Almost Fully Supported' : 'All Goals Achieved',
+        trendIcon: TrendingUp,
         isPositive: catalogStats.lowOrOut === 0,
         color: 'text-amber-600',
         bg: 'bg-amber-100'
@@ -443,7 +445,7 @@ export function AdminProducts() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-secondary-700">Stock</label>
+                <label className="text-sm font-medium text-secondary-700">Needed Quantity</label>
                 <input
                   name="stockQty"
                   type="number"

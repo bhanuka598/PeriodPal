@@ -165,8 +165,8 @@ export function Shop() {
                     </p>
                     <p className="text-xs text-ink-muted">
                       {product.stockQty > 0
-                        ? `${product.stockQty} in stock`
-                        : 'Out of stock'}
+                        ? `${product.stockQty} Available for Donation`
+                        : 'Donation Goal Achieved'}
                     </p>
                   </div>
                   <button
