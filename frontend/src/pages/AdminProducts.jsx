@@ -509,7 +509,7 @@ export function AdminProducts() {
           <div className="px-6 py-4 border-b border-secondary-100">
             <h2 className="text-lg font-bold text-secondary-900">Catalog</h2>
           </div>
-          <div className="p-4 max-h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar">
+          <div className="p-4 max-h-[calc(100vh-)] overflow-y-auto custom-scrollbar">
             {loading && (
               <p className="text-secondary-500 text-center py-12">Loading…</p>
             )}
