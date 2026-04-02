@@ -124,44 +124,44 @@ export function AuthProvider({ children }) {
     setLoading(true);
 
     try {
-      if (forceMockAuth) {
-        const { token: t, user: u } = await mockLogin(email);
-        persistSession(t, u);
-        return;
+      let response;
+      if (isGoogleUser) {
+        response = await loginUser({ token: password, email });
+      } else {
+        response = await loginUser({ email, password });
+      }
+      const data = response.data;
+
+      console.log('AuthContext login response:', data);
+
+      // Backend returns data directly, not wrapped in nested properties
+      const authToken = data.token;
+      const authUser = {
+        _id: data._id,
+        username: data.username,
+        email: data.email,
+        role: data.role
+      };
+
+      if (!authToken) {
+        throw new Error('Authentication token not received from server');
       }
 
-      try {
-        const { data } = await loginUser({ email, password });
-        persistSession(data.token, mapUserFromApi(data));
-      } catch (error) {
-        if (isNetworkError(error)) {
-          console.warn(
-            '[PeriodPal] Cannot reach API (is the backend on port 5000?). Using offline mock login.'
-          );
-          const { token: t, user: u } = await mockLogin(email);
-          persistSession(t, u);
-          return;
-        }
+      setToken(authToken);
+      setUser(authUser);
 
-        // Real DB users win when email/password match. If the API returns 401 but
-        // the user typed the documented demo credentials (Login page), keep the
-        // old behaviour: sign them in with a mock session (no DB row required).
-        if (
-          error.response?.status === 401 &&
-          demoLoginBypassAllowed() &&
-          isUiDemoCredentials(email, password)
-        ) {
-          console.info(
-            '[PeriodPal] Demo login: using built-in demo session (API returned 401).'
-          );
-          const { token: t, user: u } = await mockLogin(email);
-          persistSession(t, u);
-          return;
-        }
+      localStorage.setItem('token', authToken);
 
-        console.error('Login failed:', error);
-        throw error;
+      if (authUser) {
+        localStorage.setItem('user', JSON.stringify(authUser));
+      } else {
+        localStorage.removeItem('user');
       }
+
+      return data;
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
     } finally {
       setLoading(false);
     }

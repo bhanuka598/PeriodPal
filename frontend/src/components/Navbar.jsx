@@ -38,7 +38,7 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
     '/inventory',
     '/donations',
     '/users',
-    '/admin'
+    '/profile'
   ];
 
   const isDashboard = systemPaths.some((path) =>
@@ -139,7 +139,7 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
 
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium text-secondary-900 leading-none">
-                  {user?.name}
+                  {user?.username}
                 </p>
                 <p className="text-xs text-secondary-500 mt-1 capitalize">
                   {user?.role}
@@ -167,21 +167,16 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
                     </p>
                   </div>
 
-                  <a
-                    href="#profile"
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50 hover:text-primary-600 transition-colors"
+                  <button
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      navigate('/profile');
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50 hover:text-primary-600 transition-colors w-full text-left"
                   >
                     <UserIcon className="h-4 w-4" />
                     My Profile
-                  </a>
-
-                  <a
-                    href="#settings"
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50 hover:text-primary-600 transition-colors"
-                  >
-                    <Settings className="h-4 w-4" />
-                    Settings
-                  </a>
+                  </button>
 
                   <div className="h-px bg-secondary-100 my-1"></div>
 
@@ -269,7 +264,13 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
 
             <button
               type="button"
-              onClick={() => navigate('/login')}
+              onClick={() => {
+                if (user) {
+                  navigate('/dashboard');
+                } else {
+                  navigate('/login');
+                }
+              }}
               className="bg-ink text-white px-6 py-2.5 rounded-full font-medium hover:bg-coral transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-coral focus:ring-offset-2 focus:ring-offset-cream"
             >
               Get Involved

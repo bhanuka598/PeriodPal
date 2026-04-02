@@ -169,14 +169,6 @@ export function Sidebar({ isOpen, closeSidebar }) {
         <div className="p-4 border-t border-secondary-700 bg-secondary-900/50">
           <nav className="space-y-1">
             <a
-              href="#settings"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-secondary-700/50 hover:text-white transition-colors group"
-            >
-              <Settings className="h-5 w-5 text-secondary-400 group-hover:text-white" />
-              Settings
-            </a>
-
-            <a
               href="#help"
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-secondary-700/50 hover:text-white transition-colors group"
             >

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
+import { Mail, Lock, ArrowRight, AlertCircle, Heart } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 // Google OAuth - uses backend Passport flow
@@ -85,6 +85,20 @@ export function Login() {
         className="w-full max-w-md"
       >
         <div className="bg-white rounded-2xl shadow-warm p-8 border border-primary-100/50">
+          {/* Logo */}
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center justify-center gap-2 mx-auto mb-6 group focus:outline-none"
+            aria-label="PeriodPal Home"
+          >
+            <div className="bg-coral text-white p-2 rounded-xl group-hover:bg-coral-dark transition-colors">
+              <Heart className="w-6 h-6 fill-current" />
+            </div>
+            <span className="font-heading font-bold text-2xl tracking-tight text-ink">
+              PeriodPal<span className="text-coral">.</span>
+            </span>
+          </button>
+
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-secondary-900 mb-2">
               Welcome Back

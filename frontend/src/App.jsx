@@ -23,14 +23,14 @@ import { MenstrualRecords } from './pages/MenstrualRecords';
 import { Inventory } from './pages/Inventory';
 import { Donations } from './pages/Donations';
 import { UsersManagement } from './pages/UsersManagement';
-
+import { Profile } from './pages/Profile';
+import { GoogleCallback } from './pages/GoogleCallback';
 import { Shop } from './pages/Shop';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { PaymentSuccess } from './pages/PaymentSuccess';
 import { PaymentCancel } from './pages/PaymentCancel';
 import { AdminProducts } from './pages/AdminProducts';
-
 
 function PublicLayout() {
   const location = useLocation();
@@ -145,6 +145,8 @@ export function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route path="/profile" element={<Profile />} />
           </Route>
         </Routes>
       </AuthProvider>

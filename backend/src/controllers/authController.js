@@ -207,7 +207,8 @@ exports.loginUser = async (req, res) => {
             _id: user._id,
             username: user.username,
             email: user.email,
-            role: user.role,
+            role: user.role,   // ✅ send role
+            location: user.location,
             token: generateToken(user._id)
         });
 
