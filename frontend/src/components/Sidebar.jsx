@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -18,6 +18,7 @@ import { classNames } from '../utils/helpers';
 
 export function Sidebar({ isOpen, closeSidebar }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const getLinks = () => {
     const role = user?.role || 'beneficiary';
@@ -97,14 +98,17 @@ export function Sidebar({ isOpen, closeSidebar }) {
         )}
       >
         <div className="h-16 flex items-center justify-between px-6 border-b border-secondary-700 bg-secondary-900">
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/30">
               <HeartHandshake className="h-5 w-5 text-white" />
             </div>
             <span className="text-xl font-heading font-bold text-white tracking-tight">
               PeriodPal
             </span>
-          </div>
+          </button>
 
           <button
             onClick={closeSidebar}
