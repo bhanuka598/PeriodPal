@@ -152,17 +152,6 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
                     My Profile
                   </button>
 
-                  <button
-                    onClick={() => {
-                      setIsProfileOpen(false);
-                      navigate('/settings');
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50 hover:text-primary-600 transition-colors w-full text-left"
-                  >
-                    <Settings className="h-4 w-4" />
-                    Settings
-                  </button>
-
                   <div className="h-px bg-secondary-100 my-1"></div>
 
                   <button
