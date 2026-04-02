@@ -74,6 +74,7 @@ app.use("/api/inventory", require("./src/routes/inventoryRoutes"));
 app.use("/api/records", require("./src/routes/menstrualRecordRoutes"));
 app.use("/api/users", require("./src/routes/userRoutes"));
 app.use("/api/auth", require("./src/routes/authRoutes"));
+app.use("/api/otp", require("./src/routes/otpRoutes"));
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
