@@ -38,7 +38,13 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
     '/inventory',
     '/donations',
     '/users',
-    '/profile'
+    '/profile',
+    '/admin',
+    '/shop',
+    '/cart',
+    '/checkout',
+    '/payment-success',
+    '/payment-cancel'
   ];
 
   const isDashboard = systemPaths.some((path) =>

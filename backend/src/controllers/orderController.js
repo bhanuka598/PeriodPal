@@ -7,13 +7,28 @@ const sendEmail = require("../utils/sendEmail");
 const Stripe = require("stripe");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Helper to get userId from authenticated user or use a guest/default ID
+/**
+ * Cart model stores userId as String; Order uses Mixed (often ObjectId in BSON).
+ * Always use a string for logged-in users when writing, and match both string + ObjectId when reading orders.
+ */
 function getUserId(req) {
   if (req.user?._id) {
-    return req.user._id;
+    return String(req.user._id);
   }
-  // Use guest ID from header, or default to "GUEST"
-  return req.headers["x-guest-id"] || "GUEST";
+  const guest = req.headers["x-guest-id"];
+  if (guest && String(guest).trim()) return String(guest).trim();
+  return "GUEST";
+}
+
+/** Match Order.userId (Mixed: string or ObjectId) to the logged-in user's _id. */
+function orderUserIdClause(userIdRaw) {
+  const str = String(userIdRaw).trim();
+  if (!mongoose.isValidObjectId(str)) {
+    return { userId: str };
+  }
+  const oid = new mongoose.Types.ObjectId(str);
+  // $in with both BSON types reliably matches Mixed field (e.g. "69cd2c51..." in DB)
+  return { userId: { $in: [str, oid] } };
 }
 
 // POST /api/orders/checkout
@@ -46,7 +61,10 @@ exports.checkout = asyncHandler(async (req, res) => {
 // PATCH /api/orders/:orderId/contact
 exports.updateContact = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const order = await Order.findOne({ _id: req.params.orderId, userId });
+  const order = await Order.findOne({
+    _id: req.params.orderId,
+    ...orderUserIdClause(userId),
+  });
   if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
   order.contactInfo = req.body;
@@ -59,9 +77,10 @@ exports.updateContact = asyncHandler(async (req, res) => {
 exports.payOrder = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
 
-  const order = await Order.findOne({ _id: req.params.orderId, userId }).populate(
-    "items.productId"
-  );
+  const order = await Order.findOne({
+    _id: req.params.orderId,
+    ...orderUserIdClause(userId),
+  }).populate("items.productId");
 
   if (!order) return res.status(404).json({ success: false, message: "Order not found" });
   if (order.orderStatus === "PAID")
@@ -144,6 +163,148 @@ exports.getAllOrders = asyncHandler(async (req, res) => {
   const orders = await Order.find({ userId }).populate("items.productId").sort({ createdAt: -1 });
   
   res.json({ success: true, orders, count: orders.length });
+});
+
+function orderTime(o) {
+  return new Date(o.updatedAt || o.createdAt).getTime();
+}
+
+function sumOrderUnits(o) {
+  return o.items.reduce((s, i) => s + (Number(i.qty) || 0), 0);
+}
+
+function pctTrend(current, previous) {
+  if (previous > 0) {
+    const pct = Math.round(((current - previous) / previous) * 100);
+    return { value: `${pct >= 0 ? "+" : ""}${pct}%`, isPositive: pct >= 0 };
+  }
+  if (current > 0) return { value: "+100%", isPositive: true };
+  return { value: "—", isPositive: true };
+}
+
+function diffTrend(current, previous) {
+  const d = current - previous;
+  if (d === 0 && current === 0) return { value: "—", isPositive: true };
+  return { value: `${d >= 0 ? "+" : ""}${d}`, isPositive: d >= 0 };
+}
+
+function impactFromTotals(totalMoney, units) {
+  return Math.min(100, Math.round(20 + totalMoney / 100 + units / 5));
+}
+
+// GET /api/orders/donor-summary (+ aliases /api/me/donations, /api/users/me/donations)
+exports.getMyDonationData = asyncHandler(async (req, res) => {
+  if (!req.user?._id) {
+    return res.status(401).json({ success: false, message: "Not authorized" });
+  }
+
+  const orders = await Order.find(orderUserIdClause(req.user._id))
+    .populate("items.productId")
+    .sort({ createdAt: -1 })
+    .limit(100);
+
+  const paid = orders.filter((o) => o.orderStatus === "PAID");
+  const totalContributed = paid.reduce((s, o) => s + (Number(o.total) || 0), 0);
+  const productUnits = paid.reduce((s, o) => s + sumOrderUnits(o), 0);
+  const paidCount = paid.length;
+  const impactScore = impactFromTotals(totalContributed, productUnits);
+
+  const now = Date.now();
+  const ms7 = 7 * 24 * 60 * 60 * 1000;
+  const last7Start = now - ms7;
+  const prev7Start = now - 2 * ms7;
+
+  const paidInRange = (t0, t1) =>
+    paid.filter((o) => {
+      const t = orderTime(o);
+      return t >= t0 && t <= t1;
+    });
+
+  const last7Paid = paidInRange(last7Start, now);
+  const prev7Paid = paidInRange(prev7Start, last7Start);
+
+  const sumMoney = (list) => list.reduce((s, o) => s + (Number(o.total) || 0), 0);
+  const sumUnits = (list) => list.reduce((s, o) => s + sumOrderUnits(o), 0);
+
+  const moneyLast7 = sumMoney(last7Paid);
+  const moneyPrev7 = sumMoney(prev7Paid);
+  const unitsLast7 = sumUnits(last7Paid);
+  const unitsPrev7 = sumUnits(prev7Paid);
+  const countLast7 = last7Paid.length;
+  const countPrev7 = prev7Paid.length;
+
+  const impactLast7 = impactFromTotals(sumMoney(last7Paid), sumUnits(last7Paid));
+  const impactPrev7 = impactFromTotals(sumMoney(prev7Paid), sumUnits(prev7Paid));
+  const impactDiff = impactLast7 - impactPrev7;
+
+  const rawDays = parseInt(req.query.days, 10);
+  const chartDays = Number.isFinite(rawDays)
+    ? Math.min(366, Math.max(7, rawDays))
+    : 30;
+  const chartStart = now - chartDays * 24 * 60 * 60 * 1000;
+  const dailyMap = {};
+  for (const o of paid) {
+    const t = orderTime(o);
+    if (t < chartStart) continue;
+    const key = new Date(t).toISOString().slice(0, 10);
+    dailyMap[key] = (dailyMap[key] || 0) + (Number(o.total) || 0);
+  }
+
+  const dailyTotals = [];
+  for (let i = chartDays - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    dailyTotals.push({ date: key, total: dailyMap[key] || 0 });
+  }
+
+  const rows = orders.map((o) => {
+    const shortId = o._id.toString().slice(-6).toUpperCase();
+    const isPaid = o.orderStatus === "PAID";
+    const itemSummary = o.items
+      .map((i) => {
+        const p = i.productId;
+        const name = p?.name || "Product";
+        return `${i.qty}× ${name}`;
+      })
+      .join(", ");
+
+    let status = "Pending";
+    if (isPaid) status = "Completed";
+    else if (o.orderStatus === "FAILED" || o.payment?.status === "FAILED") status = "Failed";
+
+    return {
+      id: `DON-${shortId}`,
+      orderId: String(o._id),
+      type: "Product",
+      contribution: itemSummary || `Order ${shortId}`,
+      amount: Number(o.total) || 0,
+      units: sumOrderUnits(o),
+      date: new Date(o.updatedAt || o.createdAt).toISOString(),
+      status,
+    };
+  });
+
+  res.json({
+    success: true,
+    stats: {
+      totalContributed,
+      productUnits,
+      communitiesHelped: paidCount,
+      impactScore,
+      trends: {
+        totalDonations: pctTrend(moneyLast7, moneyPrev7),
+        productsDonated: pctTrend(unitsLast7, unitsPrev7),
+        communitiesHelped: diffTrend(countLast7, countPrev7),
+        impactScore: {
+          value: impactDiff === 0 ? "—" : `${impactDiff >= 0 ? "+" : ""}${impactDiff}`,
+          isPositive: impactDiff >= 0,
+        },
+      },
+    },
+    dailyTotals,
+    orders: rows,
+  });
 });
 
 // GET /api/orders/admin/stats — admin: units purchased across paid orders
@@ -252,9 +413,10 @@ exports.updateOrder = async (req, res) => {
 exports.createStripePayment = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
 
-  const order = await Order.findOne({ _id: req.params.orderId, userId }).populate(
-    "items.productId"
-  );
+  const order = await Order.findOne({
+    _id: req.params.orderId,
+    ...orderUserIdClause(userId),
+  }).populate("items.productId");
 
   if (!order) return res.status(404).json({ success: false, message: "Order not found" });
   if (order.orderStatus === "PAID")

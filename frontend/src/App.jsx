@@ -41,15 +41,12 @@ function PublicLayout() {
       ? 'about'
       : location.pathname === '/contact'
       ? 'contact'
-      : location.pathname === '/shop'
-      ? 'shop'
       : 'home';
 
   const setPage = (page) => {
     if (page === 'home') navigate('/');
     if (page === 'about') navigate('/about');
     if (page === 'contact') navigate('/contact');
-    if (page === 'shop') navigate('/shop');
   };
 
   return (
@@ -72,24 +69,11 @@ export function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Public pages */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/payment-success" element={<PaymentSuccess />} />
-            <Route path="/payment-cancel" element={<PaymentCancel />} />
-          </Route>
-
-          {/* Auth pages */}
+          {/* Auth pages (no layout) */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          {/* <Route path="/auth/google/callback" element={<GoogleCallback />} /> */}
 
-          {/* Protected system pages */}
+          {/* Logged-in app shell: dashboard, donations, shop, cart, checkout (stays signed in) */}
           <Route
             element={
               <ProtectedRoute>
@@ -145,8 +129,19 @@ export function App() {
                 </ProtectedRoute>
               }
             />
-
             <Route path="/profile" element={<Profile />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/payment-cancel" element={<PaymentCancel />} />
+          </Route>
+
+          {/* Marketing site (shop requires login — use /shop after sign-in) */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
           </Route>
         </Routes>
       </AuthProvider>

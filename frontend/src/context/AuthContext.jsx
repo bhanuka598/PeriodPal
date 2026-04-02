@@ -1,5 +1,8 @@
 import React, { useEffect, useState, createContext, useContext } from 'react';
-import { loginUser, registerUser } from '../services/userService';
+import { loginUser, registerUser, } from '../services/userService';
+import { mergeGuestCart } from '../api/cartApi';
+import { getGuestId } from '../utils/guestId';
+
 
 const AuthContext = createContext(undefined);
 

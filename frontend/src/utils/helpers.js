@@ -2,6 +2,13 @@ export function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
+/** False when using offline demo login (`mock-jwt-token-12345`) — API donation routes need a real JWT. */
+export function isLiveApiSession() {
+  if (typeof localStorage === 'undefined') return false;
+  const t = localStorage.getItem('token');
+  return Boolean(t && t !== 'mock-jwt-token-12345');
+}
+
 export function formatDate(dateString) {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', {
@@ -64,11 +71,25 @@ export function getApiErrorMessage(err, fallback = 'Something went wrong.') {
     }
   }
 
+  const status = err?.response?.status;
   const data = err?.response?.data;
+
+  if (typeof data === 'string') {
+    const trimmed = data.trim();
+    if (trimmed.includes('<!DOCTYPE') || trimmed.includes('<html')) {
+      if (status === 404) {
+        return 'Donation summary was not found on the API. Restart the backend from the backend folder (npm start), then confirm GET /api/orders/donor-summary exists.';
+      }
+      return 'The server returned an HTML error page instead of JSON. Check the backend terminal for errors.';
+    }
+    if (trimmed) return trimmed;
+  }
+
   const msg = data?.message;
-  if (typeof msg === 'string' && msg.trim()) return msg;
-  if (Array.isArray(msg) && msg.length) return msg.join(', ');
-  if (typeof data === 'string' && data.trim()) return data;
+  const hint =
+    typeof data?.hint === 'string' && data.hint.trim() ? ` ${data.hint.trim()}` : '';
+  if (typeof msg === 'string' && msg.trim()) return `${msg.trim()}${hint}`;
+  if (Array.isArray(msg) && msg.length) return `${msg.join(', ')}${hint}`;
 
   return fallback;
 }

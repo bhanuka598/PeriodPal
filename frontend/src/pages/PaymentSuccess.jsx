@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { HeartHandshake } from 'lucide-react';
@@ -7,6 +7,10 @@ export function PaymentSuccess() {
   const [params] = useSearchParams();
   const orderId = params.get('orderId');
   const demo = params.get('demo');
+
+  useEffect(() => {
+    window.dispatchEvent(new Event('periodpal:donations-updated'));
+  }, []);
 
   return (
     <motion.div
@@ -32,8 +36,14 @@ export function PaymentSuccess() {
       )}
       <div className="flex flex-wrap gap-3 justify-center">
         <Link
-          to="/shop"
+          to="/donations"
           className="bg-coral text-white px-6 py-3 rounded-full font-medium hover:bg-coral-dark transition-colors"
+        >
+          View my donations
+        </Link>
+        <Link
+          to="/shop"
+          className="bg-white text-ink px-6 py-3 rounded-full font-medium border border-blush/50 hover:bg-cream-dark transition-colors"
         >
           Continue shopping
         </Link>

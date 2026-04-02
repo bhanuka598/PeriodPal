@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -8,7 +8,8 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import { formatCurrency, formatDate, isLiveApiSession, getApiErrorMessage } from '../utils/helpers';
+import { getMyDonationData } from '../api/orderApi';
 
 const mockDonations = [
   {
@@ -37,9 +38,84 @@ const mockDonations = [
   }
 ];
 
+function statusPillClass(status) {
+  if (status === 'Completed') return 'bg-emerald-100 text-emerald-700';
+  if (status === 'Pending') return 'bg-amber-100 text-amber-700';
+  if (status === 'Received') return 'bg-emerald-50 text-emerald-800';
+  return 'bg-red-100 text-red-700';
+}
+
 export function Donations() {
   const { user } = useAuth();
   const isDonor = user?.role === 'donor';
+  const live = isLiveApiSession();
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [rows, setRows] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const bump = () => setRefreshKey((k) => k + 1);
+    window.addEventListener('periodpal:donations-updated', bump);
+    return () => window.removeEventListener('periodpal:donations-updated', bump);
+  }, []);
+
+  useEffect(() => {
+    if (!isDonor || !live) {
+      setRows([]);
+      setStats(null);
+      setError('');
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const { data } = await getMyDonationData(30);
+        if (cancelled) return;
+        if (data?.success) {
+          setRows(data.orders || []);
+          setStats(data.stats);
+        }
+      } catch (e) {
+        if (!cancelled) setError(getApiErrorMessage(e, 'Could not load your donations.'));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isDonor, live, refreshKey]);
+
+  const totalContributed = !isDonor
+    ? 125000
+    : !live
+      ? 4500
+      : stats
+        ? stats.totalContributed
+        : 0;
+  const productsDonated = !isDonor
+    ? 45000
+    : !live
+      ? 1200
+      : stats
+        ? stats.productUnits
+        : 0;
+  const peopleReached = !isDonor
+    ? 5000
+    : !live
+      ? 14
+      : stats
+        ? stats.communitiesHelped
+        : 0;
+
+  const tableRows = isDonor && live ? rows : mockDonations;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -84,6 +160,19 @@ export function Donations() {
         )}
       </div>
 
+      {isDonor && !live && (
+        <div className="mb-6 text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+          Demo sign-in is active. Use your real account (same password you registered with) while the
+          API is running to see your own order history. The numbers below are placeholders.
+        </div>
+      )}
+
+      {isDonor && live && error && (
+        <div className="mb-6 text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+          {error}
+        </div>
+      )}
+
       {/* Stats */}
       <motion.div
         variants={containerVariants}
@@ -104,7 +193,9 @@ export function Donations() {
                 {isDonor ? 'Total Contributed' : 'Total Funds Raised'}
               </p>
               <p className="text-2xl font-bold text-secondary-900">
-                {formatCurrency(isDonor ? 4500 : 125000)}
+                {loading && isDonor && live
+                  ? '…'
+                  : formatCurrency(totalContributed)}
               </p>
             </div>
           </div>
@@ -123,7 +214,13 @@ export function Donations() {
                 Products Donated
               </p>
               <p className="text-2xl font-bold text-secondary-900">
-                {isDonor ? '1,200' : '45,000+'}
+                {loading && isDonor && live
+                  ? '…'
+                  : isDonor && live
+                    ? (productsDonated || 0).toLocaleString()
+                    : isDonor
+                      ? '1,200'
+                      : '45,000+'}
               </p>
             </div>
           </div>
@@ -142,8 +239,19 @@ export function Donations() {
                 People Reached
               </p>
               <p className="text-2xl font-bold text-secondary-900">
-                {isDonor ? '14 Communities' : '5,000+ Individuals'}
+                {loading && isDonor && live
+                  ? '…'
+                  : isDonor && live
+                    ? String(peopleReached ?? 0)
+                    : isDonor
+                      ? '14 Communities'
+                      : '5,000+ Individuals'}
               </p>
+              {isDonor && live && !loading && (
+                <p className="text-xs text-secondary-500 mt-0.5">
+                  Completed donation checkouts
+                </p>
+              )}
             </div>
           </div>
         </motion.div>
@@ -178,49 +286,83 @@ export function Donations() {
             </thead>
 
             <tbody className="divide-y divide-secondary-100">
-              {mockDonations.map((donation) => (
-                <tr
-                  key={donation.id}
-                  className="hover:bg-secondary-50/50 transition-colors"
-                >
-                  <td className="px-6 py-4 text-sm font-medium text-secondary-900">
-                    {donation.id}
-                  </td>
-
-                  {!isDonor && (
-                    <td className="px-6 py-4 text-secondary-600">
-                      {donation.donor}
-                    </td>
-                  )}
-
-                  <td className="px-6 py-4">
-                    <span className="flex items-center gap-2 text-sm text-secondary-700">
-                      {donation.type === 'Monetary' ? (
-                        <DollarSign className="h-4 w-4 text-primary-500" />
-                      ) : (
-                        <Package className="h-4 w-4 text-emerald-500" />
-                      )}
-                      {donation.type}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4 font-medium text-secondary-900">
-                    {donation.type === 'Monetary' && donation.amount
-                      ? formatCurrency(donation.amount)
-                      : donation.items}
-                  </td>
-
-                  <td className="px-6 py-4 text-secondary-600 text-sm">
-                    {formatDate(donation.date)}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                      {donation.status}
-                    </span>
+              {loading && isDonor && live ? (
+                <tr>
+                  <td colSpan={isDonor ? 5 : 6} className="px-6 py-12 text-center text-secondary-500">
+                    Loading your donations…
                   </td>
                 </tr>
-              ))}
+              ) : tableRows.length === 0 && isDonor && live ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-secondary-500">
+                    No orders yet.{' '}
+                    <Link to="/shop" className="text-primary-600 font-medium">
+                      Shop donation products
+                    </Link>{' '}
+                    to create your first entry.
+                  </td>
+                </tr>
+              ) : (
+                tableRows.map((donation) => {
+                  const isLiveRow = isDonor && live && donation.contribution !== undefined;
+                  const type = isLiveRow ? donation.type : donation.type;
+                  const contributionText = isLiveRow
+                    ? `${formatCurrency(donation.amount)} · ${(donation.units || 0).toLocaleString()} items`
+                    : donation.type === 'Monetary' && donation.amount
+                      ? formatCurrency(donation.amount)
+                      : donation.items;
+                  const detailTitle = isLiveRow ? donation.contribution : '';
+
+                  return (
+                    <tr
+                      key={isLiveRow ? donation.orderId || donation.id : donation.id}
+                      className="hover:bg-secondary-50/50 transition-colors"
+                    >
+                      <td className="px-6 py-4 text-sm font-medium text-secondary-900">
+                        {donation.id}
+                      </td>
+
+                      {!isDonor && (
+                        <td className="px-6 py-4 text-secondary-600">
+                          {donation.donor}
+                        </td>
+                      )}
+
+                      <td className="px-6 py-4">
+                        <span className="flex items-center gap-2 text-sm text-secondary-700">
+                          {type === 'Monetary' ? (
+                            <DollarSign className="h-4 w-4 text-primary-500" />
+                          ) : (
+                            <Package className="h-4 w-4 text-emerald-500" />
+                          )}
+                          {type}
+                        </span>
+                      </td>
+
+                      <td
+                        className="px-6 py-4 font-medium text-secondary-900 max-w-[220px]"
+                        title={detailTitle || undefined}
+                      >
+                        <span className="line-clamp-2">{contributionText}</span>
+                      </td>
+
+                      <td className="px-6 py-4 text-secondary-600 text-sm">
+                        {formatDate(donation.date)}
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusPillClass(
+                            donation.status
+                          )}`}
+                        >
+                          {donation.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
