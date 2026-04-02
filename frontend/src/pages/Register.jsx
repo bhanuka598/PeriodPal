@@ -3,13 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
+  UserCircle,
   Mail,
   Lock,
   Heart,
   Building,
   Users,
   ShieldCheck,
-  AlertCircle,
   MapPin,
   CheckCircle,
   BadgeCheck,
@@ -289,10 +289,10 @@ export function Register() {
       icon: Building,
     },
     {
-      id: "donor",
-      title: "Donor",
-      desc: "Contribute funds",
-      icon: Users,
+      id: 'donor',
+      title: 'Donor',
+      desc: 'Fund & purchase supplies',
+      icon: Users
     },
     {
       id: "admin",

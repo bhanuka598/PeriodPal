@@ -69,11 +69,10 @@ export function Login() {
       console.log('Login successful, navigating to:', from);
       navigate(from);
     } catch (err) {
-      console.error('Login error:', err);
-      const errorMessage = err?.response?.data?.message || 
-                          err?.message || 
-                          "Invalid email or password. Please try again.";
-      setError(errorMessage);
+      setError(
+        err?.response?.data?.message ||
+          'Invalid email or password. Please try again.'
+      );
     }
   };
 
@@ -145,6 +144,14 @@ export function Login() {
                 <label className="block text-sm font-medium text-secondary-700">
                   Password
                 </label>
+                <div className="mt-2 flex justify-end">
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm font-medium text-primary-600 hover:text-primary-500"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

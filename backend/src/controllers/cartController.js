@@ -3,13 +3,14 @@ const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const asyncHandler = require("../utils/asyncHandler");
 
-// Helper to get userId from authenticated user or use a guest/default ID
+// Keep string userId in sync with orderController (Cart schema uses String).
 function getUserId(req) {
   if (req.user?._id) {
-    return req.user._id;
+    return String(req.user._id);
   }
-  // Use guest ID from header, or default to "GUEST"
-  return req.headers["x-guest-id"] || "GUEST";
+  const guest = req.headers["x-guest-id"];
+  if (guest && String(guest).trim()) return String(guest).trim();
+  return "GUEST";
 }
 
 async function getOrCreateCart(userId) {
@@ -164,4 +165,51 @@ exports.getCartSummary = asyncHandler(async (req, res) => {
   const total = subtotal + shipping + tax;
 
   res.json({ success: true, summary: { subtotal, shipping, tax, total } });
+});
+
+// POST /api/cart/merge — move browser guest cart into the logged-in user (after login)
+exports.mergeGuestCart = asyncHandler(async (req, res) => {
+  const userId = String(req.user._id);
+  const guestId =
+    (req.body && req.body.guestUserId) || req.headers["x-guest-id"] || "";
+
+  if (!guestId || guestId === "GUEST" || guestId === userId) {
+    return res.json({ success: true, merged: false });
+  }
+
+  const guestCart = await Cart.findOne({ userId: guestId, status: "ACTIVE" });
+  if (!guestCart?.items?.length) {
+    return res.json({ success: true, merged: false });
+  }
+
+  let userCart = await Cart.findOne({ userId, status: "ACTIVE" });
+
+  if (!userCart?.items?.length) {
+    guestCart.userId = userId;
+    await guestCart.save();
+    const populated = await guestCart.populate("items.productId");
+    return res.json({ success: true, merged: true, cart: populated });
+  }
+
+  for (const item of guestCart.items) {
+    const pid = item.productId.toString();
+    const existing = userCart.items.find((i) => i.productId.toString() === pid);
+    if (existing) {
+      existing.qty += item.qty;
+    } else {
+      userCart.items.push({
+        productId: item.productId,
+        qty: item.qty,
+        priceAtTime: item.priceAtTime,
+      });
+    }
+  }
+
+  await userCart.save();
+  guestCart.items = [];
+  guestCart.status = "CANCELLED";
+  await guestCart.save();
+
+  const populated = await userCart.populate("items.productId");
+  res.json({ success: true, merged: true, cart: populated });
 });

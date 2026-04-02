@@ -52,3 +52,16 @@ export const resendOTP = async (email, purpose = 'registration') => {
 export const checkEmailVerified = async (email, purpose = 'registration') => {
   return await API.post("/otp/check-verified", { email, purpose });
 };
+
+// Forgot Password
+export const requestPasswordReset = async (email) => {
+  return await API.post("/auth/forgot-password", { email });
+};
+
+export const verifyResetOTP = async (email, otp) => {
+  return await API.post("/auth/verify-reset-otp", { email, otp });
+};
+
+export const resetPassword = async (email, otp, newPassword) => {
+  return await API.post("/auth/reset-password", { email, otp, newPassword });
+};

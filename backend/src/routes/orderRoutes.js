@@ -10,10 +10,29 @@ const {
   deleteOrder,
   createStripePayment,
   stripeWebhook,
+  getAdminDonationStats,
+  getMyDonationData,
 } = require("../controllers/orderController");
+const {
+  optionalProtect,
+  protect,
+  authorizeRoles,
+} = require("../middleware/authMiddleware");
+
+router.use(optionalProtect);
 
 // normal routes
 router.get("/", getAllOrders);
+router.get(
+  "/admin/stats",
+  protect,
+  authorizeRoles("admin"),
+  getAdminDonationStats
+);
+
+// Donor dashboard (must be before GET /:orderId or "donor-summary" is treated as an order id)
+router.get("/:orderId", protect, getMyDonationData);
+
 router.post("/checkout", checkout);
 router.patch("/:orderId/contact", updateContact);
 router.post("/:orderId/pay", payOrder);
