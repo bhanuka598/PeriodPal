@@ -147,8 +147,10 @@ exports.loginUser = async (req, res) => {
 
         res.json({
             _id: user._id,
+            username: user.username,
             email: user.email,
             role: user.role,   // ✅ send role
+            location: user.location,
             token: generateToken(user._id)
         });
 
