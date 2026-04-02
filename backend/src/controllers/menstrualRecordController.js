@@ -6,7 +6,7 @@ const transporter = require("../utils/emailService");
 // POST /api/records
 exports.createRecord = async (req, res) => {
   try {
-    const { lastPeriodDate, cycleLength, symptoms, notes } = req.body;
+    const { lastPeriodDate,flowIntensity, cycleLength, symptoms, notes } = req.body;
 
     if (!lastPeriodDate || cycleLength === undefined) {
       return res.status(400).json({
@@ -17,6 +17,7 @@ exports.createRecord = async (req, res) => {
     const record = await MenstrualRecord.create({
       lastPeriodDate,
       cycleLength,
+      flowIntensity,
       symptoms: Array.isArray(symptoms) ? symptoms : [],
       notes: notes || "",
     });
@@ -73,13 +74,15 @@ exports.updateRecord = async (req, res) => {
       return res.status(404).json({ message: "Record not found" });
     }
 
-    const { lastPeriodDate, cycleLength, symptoms, notes } = req.body;
+    const { lastPeriodDate, flowIntensity, cycleLength, symptoms, notes } = req.body;
 
     if (lastPeriodDate !== undefined) record.lastPeriodDate = lastPeriodDate;
     if (cycleLength !== undefined) record.cycleLength = cycleLength;
+    if(flowIntensity !== undefined)record.flowIntensity=flowIntensity;
     if (symptoms !== undefined)
       record.symptoms = Array.isArray(symptoms) ? symptoms : [];
     if (notes !== undefined) record.notes = notes;
+
 
     const updated = await record.save();
 
