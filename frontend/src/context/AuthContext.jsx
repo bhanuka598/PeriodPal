@@ -1,5 +1,7 @@
 import React, { useEffect, useState, createContext, useContext } from 'react';
 import { loginUser, registerUser, } from '../services/userService';
+import { mergeGuestCart } from '../api/cartApi';
+import { getGuestId } from '../utils/guestId';
 
 
 const AuthContext = createContext(undefined);
@@ -119,6 +121,18 @@ export function AuthProvider({ children }) {
     localStorage.setItem('user', JSON.stringify(nextUser));
   };
 
+  /** Move items from this browser's guest cart onto the account (real JWT only). */
+  const syncGuestCartAfterLogin = async () => {
+    try {
+      await mergeGuestCart(getGuestId());
+    } catch (e) {
+      console.warn(
+        '[PeriodPal] Guest cart merge failed:',
+        e?.response?.data?.message || e?.message || e
+      );
+    }
+  };
+
   const login = async (email, password) => {
 
     setLoading(true);
@@ -133,6 +147,7 @@ export function AuthProvider({ children }) {
       try {
         const { data } = await loginUser({ email, password });
         persistSession(data.token, mapUserFromApi(data));
+        await syncGuestCartAfterLogin();
       } catch (error) {
         if (isNetworkError(error)) {
           console.warn(
@@ -193,6 +208,7 @@ export function AuthProvider({ children }) {
           eligibileForSupport: !!eligibileForSupport
         });
         persistSession(data.token, mapUserFromApi(data));
+        await syncGuestCartAfterLogin();
       } catch (error) {
         if (isNetworkError(error)) {
           console.warn(

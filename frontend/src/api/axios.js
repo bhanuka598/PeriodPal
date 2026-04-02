@@ -1,7 +1,18 @@
 import axios from 'axios';
+import { getGuestId } from '../utils/guestId';
+
+/** Ensure requests hit `/api/...` even if VITE_API_URL is `http://localhost:5000` (missing /api). */
+function normalizeApiBase(url) {
+  if (url == null || String(url).trim() === '') {
+    return 'http://localhost:5000/api';
+  }
+  const raw = String(url).trim().replace(/\/$/, '');
+  if (raw.endsWith('/api')) return raw;
+  return `${raw}/api`;
+}
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+  baseURL: normalizeApiBase(import.meta.env.VITE_API_URL)
 });
 
 // Request Interceptor
@@ -19,6 +30,9 @@ API.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Stable per-browser id so cart/orders stay consistent when JWT is missing on a request
+    config.headers['x-guest-id'] = getGuestId();
 
     return config;
   },
