@@ -31,6 +31,8 @@ import { CheckoutPage } from './pages/CheckoutPage';
 import { PaymentSuccess } from './pages/PaymentSuccess';
 import { PaymentCancel } from './pages/PaymentCancel';
 import { AdminProducts } from './pages/AdminProducts';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
 
 function PublicLayout() {
   const location = useLocation();
@@ -72,6 +74,8 @@ export function App() {
           {/* Auth pages (no layout) */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Logged-in app shell: dashboard, donations, shop, cart, checkout (stays signed in) */}
           <Route

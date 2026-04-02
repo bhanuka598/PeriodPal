@@ -83,6 +83,7 @@ app.use("/api/inventory", require("./src/routes/inventoryRoutes"));
 app.use("/api/records", require("./src/routes/menstrualRecordRoutes"));
 app.use("/api/users", require("./src/routes/userRoutes"));
 app.use("/api/auth", require("./src/routes/authRoutes"));
+app.use("/api/auth", require("./src/routes/forgotPasswordRoutes"));
 app.use("/api/otp", require("./src/routes/otpRoutes"));
 
 // JSON 404 for API (avoids HTML so the SPA shows a clear message, not a raw error page)
