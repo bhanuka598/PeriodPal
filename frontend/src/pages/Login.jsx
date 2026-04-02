@@ -144,6 +144,14 @@ export function Login() {
                 <label className="block text-sm font-medium text-secondary-700">
                   Password
                 </label>
+                <div className="mt-2 flex justify-end">
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm font-medium text-primary-600 hover:text-primary-500"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
