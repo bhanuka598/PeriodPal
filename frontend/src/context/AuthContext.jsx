@@ -1,5 +1,5 @@
 import React, { useEffect, useState, createContext, useContext } from 'react';
-import { loginUser, registerUser, } from '../services/userService';
+import { loginUser, registerUser } from '../services/userService';
 import { mergeGuestCart } from '../api/cartApi';
 import { getGuestId } from '../utils/guestId';
 
@@ -73,6 +73,17 @@ export function AuthProvider({ children }) {
         localStorage.removeItem('user');
       }
 
+      // Merge guest cart with user cart after login
+      const guestId = getGuestId();
+      if (guestId) {
+        try {
+          await mergeGuestCart(guestId);
+          console.log('Guest cart merged successfully');
+        } catch (cartError) {
+          console.error('Failed to merge guest cart:', cartError);
+        }
+      }
+
       return data;
     } catch (error) {
       console.error('Login failed:', error);
@@ -101,6 +112,17 @@ export function AuthProvider({ children }) {
       if (authUser) {
         setUser(authUser);
         localStorage.setItem('user', JSON.stringify(authUser));
+      }
+
+      // Merge guest cart with user cart after registration
+      const guestId = getGuestId();
+      if (guestId) {
+        try {
+          await mergeGuestCart(guestId);
+          console.log('Guest cart merged successfully');
+        } catch (cartError) {
+          console.error('Failed to merge guest cart:', cartError);
+        }
       }
 
       return data;
