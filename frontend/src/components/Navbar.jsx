@@ -223,7 +223,13 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
             ))}
 
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => {
+                if (user) {
+                  navigate('/dashboard');
+                } else {
+                  navigate('/login');
+                }
+              }}
               className="bg-ink text-white px-6 py-2.5 rounded-full font-medium hover:bg-coral transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-coral focus:ring-offset-2 focus:ring-offset-cream"
             >
               Get Involved
@@ -255,7 +261,13 @@ export function Navbar({ currentPage, setPage, toggleSidebar }) {
               ))}
 
               <button
-                onClick={() => navigate('/login')}
+                onClick={() => {
+                  if (user) {
+                    navigate('/dashboard');
+                  } else {
+                    navigate('/login');
+                  }
+                }}
                 className="bg-coral text-white px-4 py-3 rounded-2xl"
               >
                 Get Involved
