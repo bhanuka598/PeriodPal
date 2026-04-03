@@ -169,31 +169,19 @@ exports.sendReminderEmail = async (req, res) => {
   }
 };
 
-// GET /api/records/admin/all (Admin only - get all records with beneficiary info)
+// GET /api/records/admin/all (Admin only - get all records with analytics)
 exports.getAllRecordsAdmin = async (req, res) => {
   try {
-    const { beneficiaryId } = req.query;
-    
-    let query = {};
-    if (beneficiaryId) {
-      query.userId = beneficiaryId;
-    }
-    
-    const records = await MenstrualRecord.find(query)
-      .populate('userId', 'username email')
+    const records = await MenstrualRecord.find()
       .sort({ createdAt: -1 });
     
     // Calculate analytics
-    const totalBeneficiaries = await MenstrualRecord.distinct('userId');
-    const allRecords = await MenstrualRecord.find();
-    
     const analytics = {
-      totalBeneficiaries: totalBeneficiaries.length,
-      totalRecords: allRecords.length,
-      averageCycleLength: allRecords.length > 0 
-        ? Math.round(allRecords.reduce((sum, r) => sum + (r.cycleLength || 0), 0) / allRecords.length)
+      totalRecords: records.length,
+      averageCycleLength: records.length > 0 
+        ? Math.round(records.reduce((sum, r) => sum + (r.cycleLength || 0), 0) / records.length)
         : 0,
-      irregularCycles: allRecords.filter(r => r.cycleLength < 21 || r.cycleLength > 35).length
+      irregularCycles: records.filter(r => r.cycleLength < 21 || r.cycleLength > 35).length
     };
     
     res.status(200).json({
