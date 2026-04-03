@@ -13,7 +13,7 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { MenstrualRecords } from './pages/MenstrualRecords';
-import { Inventory } from './pages/Inventory';
+import Inventory from './pages/Inventory'; 
 import { Donations } from './pages/Donations';
 import { UsersManagement } from './pages/UsersManagement';
 import { GoogleCallback } from './pages/GoogleCallback';
