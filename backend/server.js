@@ -1,5 +1,6 @@
 const config = require("./src/config/config");
 const express = require("express");
+const path = require("path");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const morgan = require("morgan");
@@ -17,8 +18,8 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-guest-id', 'x-demo-login-email'],
   credentials: true
 }));
 app.use(morgan("dev"));
@@ -53,9 +54,17 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Donor dashboard — extra aliases (primary handler: GET /api/orders/donor-summary on orderRoutes)
+const { protect } = require("./src/middleware/authMiddleware");
+const orderController = require("./src/controllers/orderController");
+app.get("/api/me/donations", protect, orderController.getMyDonationData);
+app.get("/api/users/me/donations", protect, orderController.getMyDonationData);
+
 app.get("/", (req, res) => {
   res.send("PeriodPal API is running...");
 });
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/test-email", async (req, res) => {
   try {
@@ -74,6 +83,21 @@ app.use("/api/inventory", require("./src/routes/inventoryRoutes"));
 app.use("/api/records", require("./src/routes/menstrualRecordRoutes"));
 app.use("/api/users", require("./src/routes/userRoutes"));
 app.use("/api/auth", require("./src/routes/authRoutes"));
+app.use("/api/auth", require("./src/routes/forgotPasswordRoutes"));
+app.use("/api/otp", require("./src/routes/otpRoutes"));
+
+// JSON 404 for API (avoids HTML so the SPA shows a clear message, not a raw error page)
+app.use((req, res) => {
+  const pathOnly = (req.originalUrl || "").split("?")[0];
+  if (pathOnly.startsWith("/api")) {
+    return res.status(404).json({
+      success: false,
+      message: `Not found: ${req.method} ${pathOnly}`,
+      hint: "Donor summary: GET /api/orders/donor-summary (or /api/me/donations) with Authorization: Bearer <JWT>",
+    });
+  }
+  res.status(404).type("text").send("Not found");
+});
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;

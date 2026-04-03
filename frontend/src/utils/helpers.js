@@ -2,6 +2,13 @@ export function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
+/** False when using offline demo login (`mock-jwt-token-12345`) — API donation routes need a real JWT. */
+export function isLiveApiSession() {
+  if (typeof localStorage === 'undefined') return false;
+  const t = localStorage.getItem('token');
+  return Boolean(t && t !== 'mock-jwt-token-12345');
+}
+
 export function formatDate(dateString) {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', {
@@ -48,4 +55,41 @@ export function getRelativeTime(dateString) {
   if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
 
   return formatDate(date);
+}
+/**
+ * Turns Axios/fetch errors into a short message for the UI.
+ * Network failures (backend not running, wrong URL) get an explicit hint.
+ */
+export function getApiErrorMessage(err, fallback = 'Something went wrong.') {
+  if (!err?.response) {
+    if (
+      err?.code === 'ERR_NETWORK' ||
+      err?.message === 'Network Error' ||
+      String(err?.message || '').includes('Network Error')
+    ) {
+      return 'Cannot reach the API server. Open a terminal in the backend folder and run npm start (or node server.js), then try again. If you use a custom URL, set VITE_API_URL in the frontend .env (e.g. http://localhost:5000/api).';
+    }
+  }
+
+  const status = err?.response?.status;
+  const data = err?.response?.data;
+
+  if (typeof data === 'string') {
+    const trimmed = data.trim();
+    if (trimmed.includes('<!DOCTYPE') || trimmed.includes('<html')) {
+      if (status === 404) {
+        return 'Donation summary was not found on the API. Restart the backend from the backend folder (npm start), then confirm GET /api/orders/donor-summary exists.';
+      }
+      return 'The server returned an HTML error page instead of JSON. Check the backend terminal for errors.';
+    }
+    if (trimmed) return trimmed;
+  }
+
+  const msg = data?.message;
+  const hint =
+    typeof data?.hint === 'string' && data.hint.trim() ? ` ${data.hint.trim()}` : '';
+  if (typeof msg === 'string' && msg.trim()) return `${msg.trim()}${hint}`;
+  if (Array.isArray(msg) && msg.length) return `${msg.join(', ')}${hint}`;
+
+  return fallback;
 }

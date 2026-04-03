@@ -74,9 +74,6 @@ export function UsersManagement() {
         return 'ngo';
       case 'donor':
         return 'donor';
-      case 'healthofficer':
-      case 'health officer':
-        return 'healthOfficer';
       case 'admin':
         return 'admin';
       default:
@@ -167,8 +164,6 @@ export function UsersManagement() {
         return 'Beneficiary';
       case 'ngo':
         return 'NGO Staff';
-      case 'healthOfficer':
-        return 'Health Officer';
       case 'donor':
         return 'Donor';
       case 'admin':
@@ -184,8 +179,6 @@ export function UsersManagement() {
         return 'bg-primary-100 text-primary-700';
       case 'ngo':
         return 'bg-emerald-100 text-emerald-700';
-      case 'healthOfficer':
-        return 'bg-purple-100 text-purple-700';
       case 'donor':
         return 'bg-amber-100 text-amber-700';
       case 'admin':
@@ -221,8 +214,8 @@ export function UsersManagement() {
           return u.role === 'beneficiary';
         case 'NGO Staff':
           return u.role === 'ngo';
-        case 'Health Officers':
-          return u.role === 'healthOfficer';
+        case 'Donors':
+          return u.role === 'donor';
         default:
           return true;
       }
@@ -234,7 +227,7 @@ export function UsersManagement() {
       total: users.length,
       beneficiaries: users.filter((u) => u.role === 'beneficiary').length,
       ngoStaff: users.filter((u) => u.role === 'ngo').length,
-      healthOfficers: users.filter((u) => u.role === 'healthOfficer').length
+      donors: users.filter((u) => u.role === 'donor').length
     };
   }, [users]);
 
@@ -341,26 +334,8 @@ export function UsersManagement() {
             Users Management
           </h1>
           <p className="text-secondary-500 mt-1">
-            Manage beneficiaries, NGOs, and health officers.
+            Manage Admins, Beneficiaries, NGOs, and Donors.
           </p>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={handleUpdateMyProfile}
-            disabled={actionLoading || !myProfile}
-            className="flex items-center justify-center gap-2 bg-white border border-secondary-200 text-secondary-700 py-2.5 px-5 rounded-xl font-medium transition-colors shadow-sm disabled:opacity-60"
-          >
-            Update My Profile
-          </button>
-
-          <button
-            onClick={openAddModal}
-            className="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white py-2.5 px-5 rounded-xl font-medium transition-colors shadow-sm shadow-primary-500/20"
-          >
-            <Plus className="h-5 w-5" />
-            Add User
-          </button>
         </div>
       </div>
 
@@ -436,8 +411,8 @@ export function UsersManagement() {
                   <Stethoscope className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-secondary-500">Health Officers</p>
-                  <p className="text-2xl font-bold text-secondary-900">{stats.healthOfficers}</p>
+                  <p className="text-sm font-medium text-secondary-500">Donors</p>
+                  <p className="text-2xl font-bold text-secondary-900">{stats.donors}</p>
                 </div>
               </div>
             </motion.div>
@@ -445,7 +420,7 @@ export function UsersManagement() {
 
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
             <div className="flex space-x-1 bg-secondary-100/50 p-1 rounded-xl w-full lg:w-auto overflow-x-auto">
-              {['All', 'Beneficiaries', 'NGO Staff', 'Health Officers'].map((tab) => (
+              {['All', 'Beneficiaries', 'NGO Staff', 'Donors'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -508,8 +483,8 @@ export function UsersManagement() {
                                 ? 'bg-primary-100 text-primary-700 border-primary-200'
                                 : u.role === 'ngo'
                                 ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                                : u.role === 'healthOfficer'
-                                ? 'bg-purple-100 text-purple-700 border-purple-200'
+                                : u.role === 'donor'
+                                ? 'bg-amber-100 text-amber-700 border-amber-200'
                                 : 'bg-blue-100 text-blue-700 border-blue-200'
                             )}
                           >
@@ -568,7 +543,7 @@ export function UsersManagement() {
                         <div className="flex items-center justify-end gap-3">
                           <button
                             onClick={() => openEditModal(u)}
-                            className="text-primary-600 hover:text-primary-800 transition-colors"
+                            className="text-blue-600 hover:text-blue-800 transition-colors"
                             title="Edit User"
                           >
                             <Edit2 className="h-4 w-4" />
@@ -633,6 +608,7 @@ export function UsersManagement() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, username: e.target.value }))
                   }
+                  readOnly
                   placeholder="Jane Doe"
                   className="w-full border border-secondary-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                 />
@@ -648,6 +624,7 @@ export function UsersManagement() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, email: e.target.value }))
                   }
+                  readOnly
                   placeholder="jane@example.com"
                   className="w-full border border-secondary-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                 />
@@ -666,7 +643,6 @@ export function UsersManagement() {
                 >
                   <option value="beneficiary">Beneficiary</option>
                   <option value="ngo">NGO Staff</option>
-                  <option value="healthOfficer">Health Officer</option>
                   <option value="donor">Donor</option>
                   <option value="admin">Admin</option>
                 </select>

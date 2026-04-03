@@ -1,5 +1,12 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Outlet,
+  useLocation,
+  useNavigate
+} from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
@@ -12,11 +19,21 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
-import { MenstrualRecords } from './pages/MenstrualRecords';
+import MenstrualRecord from './pages/menstrualRecord/menstrualRecord';
+import { MenstrualAnalysisDashboard } from './pages/menstrualRecord/MenstrualAnalysisDashboard';
 import { Inventory } from './pages/Inventory';
 import { Donations } from './pages/Donations';
 import { UsersManagement } from './pages/UsersManagement';
+import { Profile } from './pages/Profile';
 import { GoogleCallback } from './pages/GoogleCallback';
+import { Shop } from './pages/Shop';
+import { CartPage } from './pages/CartPage';
+import { CheckoutPage } from './pages/CheckoutPage';
+import { PaymentSuccess } from './pages/PaymentSuccess';
+import { PaymentCancel } from './pages/PaymentCancel';
+import { AdminProducts } from './pages/AdminProducts';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
 
 function PublicLayout() {
   const location = useLocation();
@@ -41,7 +58,7 @@ function PublicLayout() {
 
       <main className="flex-grow flex flex-col pt-16 md:pt-20">
         <AnimatePresence mode="wait">
-          <Outlet />
+          <Outlet context={{ setPage }} />
         </AnimatePresence>
       </main>
 
@@ -55,19 +72,13 @@ export function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Public pages */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-          </Route>
-
-          {/* Auth pages */}
+          {/* Auth pages (no layout) */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/auth/google/callback" element={<GoogleCallback />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Protected system pages */}
+          {/* Logged-in app shell: dashboard, donations, shop, cart, checkout (stays signed in) */}
           <Route
             element={
               <ProtectedRoute>
@@ -80,8 +91,26 @@ export function App() {
             <Route
               path="/records"
               element={
-                <ProtectedRoute allowedRoles={['beneficiary', 'admin']}>
-                  <MenstrualRecords />
+                <ProtectedRoute allowedRoles={['user', 'beneficiary', 'admin']}>
+                  <MenstrualRecord />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/products"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminProducts />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/records"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <MenstrualAnalysisDashboard />
                 </ProtectedRoute>
               }
             />
@@ -112,6 +141,19 @@ export function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/payment-cancel" element={<PaymentCancel />} />
+          </Route>
+
+          {/* Marketing site (shop requires login — use /shop after sign-in) */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
           </Route>
         </Routes>
       </AuthProvider>

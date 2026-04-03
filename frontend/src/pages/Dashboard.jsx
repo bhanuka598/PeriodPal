@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Calendar,
@@ -13,12 +14,92 @@ import {
   Plus
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { classNames } from '../utils/helpers';
+import { classNames, formatCurrency, isLiveApiSession, getApiErrorMessage } from '../utils/helpers';
+import { getMyDonationData } from '../api/orderApi';
+
+function DonorOverviewChart({ dailyTotals, rangeDays }) {
+  const max = useMemo(
+    () => Math.max(1, ...dailyTotals.map((d) => d.total)),
+    [dailyTotals]
+  );
+
+  const labelEvery = rangeDays <= 14 ? 1 : rangeDays <= 31 ? 5 : 30;
+
+  return (
+    <div className="flex h-56 w-full items-end gap-0.5 sm:gap-1 pt-4">
+      {dailyTotals.map((d, i) => {
+        const h = Math.round((d.total / max) * 100);
+        const showLabel = i % labelEvery === 0 || i === dailyTotals.length - 1;
+        return (
+          <div
+            key={d.date}
+            className="flex flex-1 flex-col items-center justify-end gap-1 min-w-0"
+            title={`${d.date}: ${formatCurrency(d.total)}`}
+          >
+            <div
+              className="w-full max-w-[14px] mx-auto rounded-t bg-primary-400/90 hover:bg-primary-500 transition-colors"
+              style={{ height: `${Math.max(h, d.total > 0 ? 8 : 2)}%` }}
+            />
+            {showLabel && (
+              <span className="text-[9px] sm:text-[10px] text-secondary-400 truncate w-full text-center">
+                {d.date.slice(5)}
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function Dashboard() {
   const { user } = useAuth();
+  const [donorLoading, setDonorLoading] = useState(false);
+  const [donorError, setDonorError] = useState('');
+  const [donorStats, setDonorStats] = useState(null);
+  const [dailyTotals, setDailyTotals] = useState([]);
+  const [chartRange, setChartRange] = useState('30'); // '7' | '30' | '365'
+  const [donationRefreshKey, setDonationRefreshKey] = useState(0);
 
-  // Mock data based on role
+  const chartDays = chartRange === '7' ? 7 : chartRange === '365' ? 365 : 30;
+
+  useEffect(() => {
+    const bump = () => setDonationRefreshKey((k) => k + 1);
+    window.addEventListener('periodpal:donations-updated', bump);
+    return () => window.removeEventListener('periodpal:donations-updated', bump);
+  }, []);
+
+  useEffect(() => {
+    if (user?.role !== 'donor' || !isLiveApiSession()) {
+      setDonorStats(null);
+      setDailyTotals([]);
+      setDonorError('');
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      setDonorLoading(true);
+      setDonorError('');
+      try {
+        const { data } = await getMyDonationData(chartDays);
+        if (cancelled) return;
+        if (data?.success) {
+          setDonorStats(data.stats);
+          setDailyTotals(data.dailyTotals || []);
+        }
+      } catch (e) {
+        if (!cancelled) setDonorError(getApiErrorMessage(e, 'Could not load your donation stats.'));
+      } finally {
+        if (!cancelled) setDonorLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.role, chartDays, donationRefreshKey]);
+
   const getStats = (role) => {
     switch (role) {
       case 'ngo':
@@ -51,7 +132,7 @@ export function Dashboard() {
             bg: 'bg-emerald-100'
           },
           {
-            label: 'Low Stock Alerts',
+            label: 'Items Near Goal',
             value: '3',
             icon: AlertCircle,
             trend: '+2',
@@ -62,46 +143,88 @@ export function Dashboard() {
         ];
 
       case 'donor':
+        if (donorStats && isLiveApiSession()) {
+          const t = donorStats.trends || {};
+          return [
+            {
+              label: 'Total Donations',
+              value: formatCurrency(donorStats.totalContributed || 0),
+              icon: Heart,
+              trend: t.totalDonations?.value ?? '—',
+              isPositive: t.totalDonations?.isPositive !== false,
+              color: 'text-primary-600',
+              bg: 'bg-primary-100'
+            },
+            {
+              label: 'Products Donated',
+              value: (donorStats.productUnits || 0).toLocaleString(),
+              icon: Package,
+              trend: t.productsDonated?.value ?? '—',
+              isPositive: t.productsDonated?.isPositive !== false,
+              color: 'text-emerald-600',
+              bg: 'bg-emerald-100'
+            },
+            {
+              label: 'Communities Helped',
+              value: String(donorStats.communitiesHelped ?? 0),
+              icon: Users,
+              trend: t.communitiesHelped?.value ?? '—',
+              isPositive: t.communitiesHelped?.isPositive !== false,
+              color: 'text-blue-600',
+              bg: 'bg-blue-100'
+            },
+            {
+              label: 'Impact Score',
+              value: String(donorStats.impactScore ?? 0),
+              icon: TrendingUp,
+              trend: t.impactScore?.value ?? '—',
+              isPositive: t.impactScore?.isPositive !== false,
+              color: 'text-purple-600',
+              bg: 'bg-purple-100'
+            }
+          ];
+        }
         return [
           {
             label: 'Total Donations',
-            value: '$4,500',
+            value: '$0',
             icon: Heart,
-            trend: '+15%',
+            trend: '—',
             isPositive: true,
             color: 'text-primary-600',
             bg: 'bg-primary-100'
           },
           {
             label: 'Products Donated',
-            value: '1,200',
+            value: '0',
             icon: Package,
-            trend: '+8%',
+            trend: '—',
             isPositive: true,
             color: 'text-emerald-600',
             bg: 'bg-emerald-100'
           },
           {
             label: 'Communities Helped',
-            value: '14',
+            value: '0',
             icon: Users,
-            trend: '+2',
+            trend: '—',
             isPositive: true,
             color: 'text-blue-600',
             bg: 'bg-blue-100'
           },
           {
             label: 'Impact Score',
-            value: '98',
+            value: '0',
             icon: TrendingUp,
-            trend: '+5',
+            trend: '—',
             isPositive: true,
             color: 'text-purple-600',
             bg: 'bg-purple-100'
           }
         ];
 
-      default:
+      case 'user':
+      case 'beneficiary':
         return [
           {
             label: 'Current Cycle Day',
@@ -140,10 +263,14 @@ export function Dashboard() {
             bg: 'bg-emerald-100'
           }
         ];
+
+      default:
+        return getStats('beneficiary');
     }
   };
 
-  const stats = getStats(user?.role || 'user');
+  const stats = getStats(user?.role || 'beneficiary');
+  const isDonor = user?.role === 'donor';
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -172,6 +299,17 @@ export function Dashboard() {
         <p className="text-secondary-500 mt-1">
           Here's what's happening with your account today.
         </p>
+        {isDonor && !isLiveApiSession() && (
+          <p className="mt-3 text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+            You are signed in with a demo session. Log in with your registered email and password
+            (backend running) to see your real donation totals and history from completed shop orders.
+          </p>
+        )}
+        {isDonor && donorError && (
+          <p className="mt-3 text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+            {donorError}
+          </p>
+        )}
       </div>
 
       {/* Stats */}
@@ -203,11 +341,11 @@ export function Dashboard() {
                       : 'text-red-700 bg-red-50'
                   )}
                 >
-                  {stat.isPositive ? (
+                  {stat.trend !== '—' && stat.isPositive ? (
                     <TrendingUp className="h-3 w-3 mr-1" />
-                  ) : (
+                  ) : stat.trend !== '—' && !stat.isPositive ? (
                     <TrendingDown className="h-3 w-3 mr-1" />
-                  )}
+                  ) : null}
                   {stat.trend}
                 </div>
               </div>
@@ -216,7 +354,7 @@ export function Dashboard() {
                 {stat.label}
               </h3>
               <p className="text-2xl font-bold text-secondary-900 mt-1">
-                {stat.value}
+                {donorLoading && isDonor && isLiveApiSession() ? '…' : stat.value}
               </p>
             </motion.div>
           );
@@ -237,21 +375,58 @@ export function Dashboard() {
               Overview
             </h2>
 
-            <select className="bg-secondary-50 border border-secondary-200 text-secondary-700 text-sm rounded-lg p-2">
-              <option>Last 7 days</option>
-              <option>Last 30 days</option>
-              <option>This year</option>
-            </select>
+            {isDonor && isLiveApiSession() ? (
+              <select
+                value={chartRange}
+                onChange={(e) => setChartRange(e.target.value)}
+                className="bg-secondary-50 border border-secondary-200 text-secondary-700 text-sm rounded-lg p-2"
+              >
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="365">Last 12 months</option>
+              </select>
+            ) : (
+              <select className="bg-secondary-50 border border-secondary-200 text-secondary-700 text-sm rounded-lg p-2">
+                <option>Last 7 days</option>
+                <option>Last 30 days</option>
+                <option>This year</option>
+              </select>
+            )}
           </div>
 
-          <div className="h-64 w-full bg-secondary-50 rounded-xl border border-secondary-100 border-dashed flex items-center justify-center">
-            <div className="text-center">
-              <TrendingUp className="h-8 w-8 text-secondary-300 mx-auto mb-2" />
-              <p className="text-secondary-500 font-medium">
-                Analytics Chart Area
-              </p>
+          {isDonor && isLiveApiSession() ? (
+            donorLoading ? (
+              <div className="h-64 w-full bg-secondary-50 rounded-xl border border-secondary-100 border-dashed flex items-center justify-center">
+                <p className="text-secondary-500 font-medium">Loading chart…</p>
+              </div>
+            ) : dailyTotals.length > 0 ? (
+              <div className="rounded-xl border border-secondary-100 bg-secondary-50/30 px-2 pb-2">
+                <DonorOverviewChart dailyTotals={dailyTotals} rangeDays={chartDays} />
+                <p className="text-center text-xs text-secondary-500 mt-2">
+                  Contribution total per day (completed orders)
+                </p>
+              </div>
+            ) : (
+              <div className="h-64 w-full bg-secondary-50 rounded-xl border border-secondary-100 border-dashed flex items-center justify-center">
+                <div className="text-center px-4">
+                  <TrendingUp className="h-8 w-8 text-secondary-300 mx-auto mb-2" />
+                  <p className="text-secondary-500 font-medium">No donation activity in this range yet</p>
+                  <Link to="/shop" className="text-primary-600 text-sm font-medium mt-2 inline-block">
+                    Fund supplies in the shop →
+                  </Link>
+                </div>
+              </div>
+            )
+          ) : (
+            <div className="h-64 w-full bg-secondary-50 rounded-xl border border-secondary-100 border-dashed flex items-center justify-center">
+              <div className="text-center">
+                <TrendingUp className="h-8 w-8 text-secondary-300 mx-auto mb-2" />
+                <p className="text-secondary-500 font-medium">
+                  Analytics Chart Area
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </motion.div>
 
         {/* Sidebar */}
@@ -268,20 +443,54 @@ export function Dashboard() {
             </h2>
 
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white py-2.5 px-4 rounded-xl">
-                <Plus className="h-4 w-4" />
-                {user?.role === 'user'
-                  ? 'Log Period'
-                  : user?.role === 'ngo'
-                  ? 'Add Inventory'
-                  : 'Make Donation'}
-              </button>
+              {user?.role === 'user' || user?.role === 'beneficiary' ? (
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white py-2.5 px-4 rounded-xl"
+                >
+                  <Plus className="h-4 w-4" />
+                  Log Period
+                </button>
+              ) : user?.role === 'ngo' ? (
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white py-2.5 px-4 rounded-xl"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Inventory
+                </button>
+              ) : (
+                <Link
+                  to="/shop"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white py-2.5 px-4 rounded-xl"
+                >
+                  <Plus className="h-4 w-4" />
+                  Make Donation
+                </Link>
+              )}
 
-              <button className="w-full flex items-center justify-center gap-2 bg-primary-50 text-primary-700 py-2.5 px-4 rounded-xl">
-                {user?.role === 'user'
-                  ? 'Request Products'
-                  : 'View Reports'}
-              </button>
+              {user?.role === 'user' || user?.role === 'beneficiary' ? (
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-50 text-primary-700 py-2.5 px-4 rounded-xl"
+                >
+                  Request Products
+                </button>
+              ) : user?.role === 'donor' ? (
+                <Link
+                  to="/donations"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-50 text-primary-700 py-2.5 px-4 rounded-xl"
+                >
+                  View Reports
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-50 text-primary-700 py-2.5 px-4 rounded-xl"
+                >
+                  View Reports
+                </button>
+              )}
             </div>
           </div>
         </motion.div>

@@ -19,26 +19,43 @@ exports.getProducts = asyncHandler(async (req, res) => {
   res.json({ success: true, products });
 });
 
-// POST /api/products (simple create)
+// POST /api/products — JSON or multipart (field "image" optional)
 exports.createProduct = asyncHandler(async (req, res) => {
-  const { name, category, price, stockQty, imageUrl, description, priorityTag } = req.body;
+  const body =
+    req.body != null && typeof req.body === "object" ? req.body : {};
+  const { name, category, description, priorityTag, imageUrl } = body;
+  const price = Number(body.price);
+  const stockQty = Number(body.stockQty);
 
   // Validate required fields
-  if (!name || !category || price === undefined || stockQty === undefined) {
+  if (
+    !name ||
+    !String(name).trim() ||
+    !category ||
+    !String(category).trim() ||
+    Number.isNaN(price) ||
+    Number.isNaN(stockQty)
+  ) {
     return res.status(400).json({
       success: false,
-      message: "Name, category, price, and stockQty are required"
+      message: "Name, category, price, and stockQty are required",
     });
   }
 
+  let finalImageUrl =
+    typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : "";
+  if (req.file) {
+    finalImageUrl = `/uploads/products/${req.file.filename}`;
+  }
+
   const product = await Product.create({
-    name,
-    category,
+    name: String(name).trim(),
+    category: String(category).trim(),
     price,
     stockQty,
-    imageUrl,
-    description,
-    priorityTag
+    imageUrl: finalImageUrl,
+    description: description != null ? String(description) : "",
+    priorityTag: priorityTag || "MEDIUM",
   });
 
   res.status(201).json({ success: true, product });
@@ -64,30 +81,43 @@ exports.getProductById = async (req, res) => {
   }
 };
 
-// PUT /api/products/:id  (Update product)
-exports.updateProduct = async (req, res) => {
-  try {
-    const { id } = req.params;
+// PUT /api/products/:id — JSON or multipart; new file replaces imageUrl
+exports.updateProduct = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
     if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({ success: false, message: "Invalid product id" });
     }
 
-    // Only allow fields you want to update (prevents unexpected updates)
-    const allowedFields = [
-      "name",
-      "category",
-      "description",
-      "imageUrl",
-      "price",
-      "stockQty",
-      "priorityTag",
-    ];
+    const body =
+    req.body != null && typeof req.body === "object" ? req.body : {};
+
+  const allowedFields = [
+    "name",
+    "category",
+    "description",
+    "imageUrl",
+    "price",
+    "stockQty",
+    "priorityTag",
+  ];
 
     const updates = {};
-    for (const key of allowedFields) {
-      if (req.body[key] !== undefined) updates[key] = req.body[key];
+  for (const key of allowedFields) {
+    if (body[key] === undefined) continue;
+    if (key === "price" || key === "stockQty") {
+      const n = Number(body[key]);
+      if (!Number.isNaN(n)) updates[key] = n;
+    } else if (key === "name" || key === "category") {
+      updates[key] = String(body[key]).trim();
+    } else {
+      updates[key] = body[key];
     }
+  }
+
+  if (req.file) {
+    updates.imageUrl = `/uploads/products/${req.file.filename}`;
+  }
 
     const updated = await Product.findByIdAndUpdate(id, updates, {
       new: true,
@@ -98,11 +128,8 @@ exports.updateProduct = async (req, res) => {
       return res.status(404).json({ success: false, message: "Product not found" });
     }
 
-    return res.status(200).json({ success: true, message: "Product updated", product: updated });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: "Server error", error: err.message });
-  }
-};
+  return res.status(200).json({ success: true, message: "Product updated", product: updated });
+});
 
 // DELETE /api/products/:id  (Delete product)
 exports.deleteProduct = async (req, res) => {

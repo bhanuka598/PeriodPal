@@ -10,6 +10,11 @@ const menstrualRecordSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    flowIntensity: {
+      type: String,
+      enum: ["Light", "Medium", "Heavy"],
+      default: "Medium",
+    },
     symptoms: [
       {
         type: String,
