@@ -19,7 +19,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
-import { MenstrualRecords } from './pages/MenstrualRecords';
+import MenstrualRecord from './pages/menstrualRecord/menstrualRecord';
 import { Inventory } from './pages/Inventory';
 import { Donations } from './pages/Donations';
 import { UsersManagement } from './pages/UsersManagement';
@@ -90,9 +90,7 @@ export function App() {
             <Route
               path="/records"
               element={
-
                 <ProtectedRoute allowedRoles={['user', 'beneficiary', 'admin']}>
-
                   <MenstrualRecords />
                 </ProtectedRoute>
               }

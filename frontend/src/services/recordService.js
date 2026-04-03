@@ -1,23 +1,54 @@
-import API from '../api/axios';
+import API from "../api/axios";
+
+const formatDate = (date) => {
+  if (!date) return "";
+  return new Date(date).toISOString().split("T")[0];
+};
+
+const formatRecord = (record) => ({
+  id: record._id,
+  lastPeriodDate: formatDate(record.lastPeriodDate),
+  cycleLength: record.cycleLength,
+  flowIntensity: record.flowIntensity || "Medium",
+  symptoms: record.symptoms || [],
+  notes: record.notes || "",
+  createdAt: record.createdAt,
+  updatedAt: record.updatedAt,
+});
+
+const formatRecords = (data) => {
+  if (Array.isArray(data)) {
+    return data.map(formatRecord);
+  }
+  if (Array.isArray(data?.records)) {
+    return data.records.map(formatRecord);
+  }
+  return [];
+};
 
 export const recordService = {
-  getRecords: async () => {
-    return API.get('/records');
+  getAllRecords: async () => {
+    const res = await API.get("/records");
+    return formatRecords(res.data);
   },
 
   getRecordById: async (id) => {
-    return API.get(`/records/${id}`);
+    const res = await API.get(`/records/${id}`);
+    return formatRecord(res.data);
   },
 
   createRecord: async (recordData) => {
-    return API.post('/records', recordData);
+    const res = await API.post("/records", recordData);
+    return formatRecord(res.data);
   },
 
   updateRecord: async (id, recordData) => {
-    return API.put(`/records/${id}`, recordData);
+    const res = await API.put(`/records/${id}`, recordData);
+    return formatRecord(res.data);
   },
 
   deleteRecord: async (id) => {
-    return API.delete(`/records/${id}`);
-  }
+    const res = await API.delete(`/records/${id}`);
+    return res.data;
+  },
 };
