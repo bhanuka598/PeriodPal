@@ -20,7 +20,6 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import MenstrualRecord from './pages/menstrualRecord/menstrualRecord';
-import { AdminMenstrualRecords } from './pages/menstrualRecord/AdminMenstrualRecords';
 import { MenstrualAnalysisDashboard } from './pages/menstrualRecord/MenstrualAnalysisDashboard';
 import { Inventory } from './pages/Inventory';
 import { Donations } from './pages/Donations';
