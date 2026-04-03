@@ -51,4 +51,15 @@ export const recordService = {
     const res = await API.delete(`/records/${id}`);
     return res.data;
   },
+
+  // Admin only - get all records with beneficiary info
+  getAllRecordsAdmin: async (beneficiaryId = null) => {
+    const params = beneficiaryId ? { beneficiaryId } : {};
+    const res = await API.get("/records/admin/all", { params });
+    return {
+      records: formatRecords(res.data.records),
+      analytics: res.data.analytics,
+      pagination: res.data.pagination
+    };
+  },
 };

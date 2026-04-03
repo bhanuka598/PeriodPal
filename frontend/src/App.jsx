@@ -20,6 +20,7 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import MenstrualRecord from './pages/menstrualRecord/menstrualRecord';
+import { AdminMenstrualRecords } from './pages/menstrualRecord/AdminMenstrualRecords';
 import { Inventory } from './pages/Inventory';
 import { Donations } from './pages/Donations';
 import { UsersManagement } from './pages/UsersManagement';
@@ -101,6 +102,15 @@ export function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminProducts />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/records"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminMenstrualRecords />
                 </ProtectedRoute>
               }
             />

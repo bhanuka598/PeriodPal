@@ -1,5 +1,6 @@
 const MenstrualRecord = require("../models/MenstrualRecord");
 const mongoose = require("mongoose");
+const User = require("../models/User");
 
 const transporter = require("../utils/emailService");
 
@@ -165,5 +166,46 @@ exports.sendReminderEmail = async (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({ message: "Email sending failed", error: err.message });
+  }
+};
+
+// GET /api/records/admin/all (Admin only - get all records with beneficiary info)
+exports.getAllRecordsAdmin = async (req, res) => {
+  try {
+    const { beneficiaryId } = req.query;
+    
+    let query = {};
+    if (beneficiaryId) {
+      query.userId = beneficiaryId;
+    }
+    
+    const records = await MenstrualRecord.find(query)
+      .populate('userId', 'username email')
+      .sort({ createdAt: -1 });
+    
+    // Calculate analytics
+    const totalBeneficiaries = await MenstrualRecord.distinct('userId');
+    const allRecords = await MenstrualRecord.find();
+    
+    const analytics = {
+      totalBeneficiaries: totalBeneficiaries.length,
+      totalRecords: allRecords.length,
+      averageCycleLength: allRecords.length > 0 
+        ? Math.round(allRecords.reduce((sum, r) => sum + (r.cycleLength || 0), 0) / allRecords.length)
+        : 0,
+      irregularCycles: allRecords.filter(r => r.cycleLength < 21 || r.cycleLength > 35).length
+    };
+    
+    res.status(200).json({
+      records,
+      analytics,
+      pagination: {
+        total: records.length,
+        page: 1,
+        pages: 1
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
