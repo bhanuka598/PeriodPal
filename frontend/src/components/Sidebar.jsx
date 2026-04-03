@@ -34,7 +34,7 @@ export function Sidebar({ isOpen, closeSidebar }) {
       },
       {
         name: 'Menstrual Records',
-        path: '/records',
+        path: role === 'admin' ? '/admin/records' : '/records',
         icon: CalendarHeart,
 
         roles: ['user', 'beneficiary', 'admin']
