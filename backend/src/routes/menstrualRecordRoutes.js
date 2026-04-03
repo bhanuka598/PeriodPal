@@ -8,6 +8,7 @@ const {
   updateRecord,
   deleteRecord,
   sendReminderEmail,
+  getAllRecordsAdmin,
 } = require("../controllers/menstrualRecordController");
 
 // Create
@@ -26,5 +27,8 @@ router.put("/:id", updateRecord);
 
 // Delete
 router.delete("/:id", deleteRecord);
+
+// Admin only - get all records with beneficiary info
+router.get("/admin/all", getAllRecordsAdmin);
 
 module.exports = router;
