@@ -13,6 +13,8 @@ import {
   ArrowDownCircle,
   MapPin,
   Boxes,
+  Pencil,
+  X,
 } from "lucide-react";
 import inventoryService from "../services/inventoryService";
 
@@ -25,6 +27,8 @@ const Inventory = () => {
   });
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     fetchInventory();
@@ -37,35 +41,50 @@ const Inventory = () => {
       setItems(data);
     } catch (error) {
       console.error("Error fetching inventory:", error);
+      alert(error.response?.data?.message || "Error fetching inventory");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearchChange = (e) => setSearch(e.target.value);
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+  };
 
   const handleAddItemChange = (e) => {
     setNewItem({ ...newItem, [e.target.name]: e.target.value });
   };
 
+  const resetForm = () => {
+    setNewItem({
+      productType: "",
+      totalStock: 0,
+      centerLocation: "",
+    });
+    setEditingId(null);
+    setIsEditing(false);
+  };
+
   const handleAddItemSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const payload = {
         ...newItem,
         totalStock: Number(newItem.totalStock),
       };
 
-      const addedItem = await inventoryService.addItem(payload);
-      setItems((prevItems) => [addedItem, ...prevItems]);
-      setNewItem({
-        productType: "",
-        totalStock: 0,
-        centerLocation: "",
-      });
+      if (isEditing) {
+        await inventoryService.updateItem(editingId, payload);
+      } else {
+        await inventoryService.addItem(payload);
+      }
+
+      await fetchInventory();
+      resetForm();
     } catch (error) {
-      console.error("Error adding item:", error);
-      alert(error.response?.data?.message || "Error adding item");
+      console.error("Error saving item:", error);
+      alert(error.response?.data?.message || "Error saving item");
     }
   };
 
@@ -76,6 +95,10 @@ const Inventory = () => {
     try {
       await inventoryService.deleteItem(id);
       setItems((prevItems) => prevItems.filter((item) => item._id !== id));
+
+      if (editingId === id) {
+        resetForm();
+      }
     } catch (error) {
       console.error("Error deleting item:", error);
       alert(error.response?.data?.message || "Error deleting item");
@@ -92,6 +115,19 @@ const Inventory = () => {
     }
   };
 
+  const handleEdit = (item) => {
+    setNewItem({
+      productType: item.productType || "",
+      totalStock: item.totalStock || 0,
+      centerLocation: item.centerLocation || "",
+    });
+
+    setEditingId(item._id);
+    setIsEditing(true);
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const filteredItems = items.filter(
     (item) =>
       item.productType?.toLowerCase().includes(search.toLowerCase()) ||
@@ -105,21 +141,22 @@ const Inventory = () => {
   };
 
   const getStatusStyles = (stock) => {
-    if (stock === 0) {
-      return "bg-red-50 text-red-700";
-    }
-    if (stock <= 20) {
-      return "bg-amber-50 text-amber-700";
-    }
+    if (stock === 0) return "bg-red-50 text-red-700";
+    if (stock <= 20) return "bg-amber-50 text-amber-700";
     return "bg-emerald-50 text-emerald-700";
   };
 
   const totalItems = filteredItems.length;
-  const lowOrOutCount = filteredItems.filter((item) => item.totalStock <= 20).length;
+  const lowOrOutCount = filteredItems.filter(
+    (item) => Number(item.totalStock) <= 20
+  ).length;
   const totalStockUnits = filteredItems.reduce(
     (sum, item) => sum + Number(item.totalStock || 0),
     0
   );
+  const healthyStockCount = filteredItems.filter(
+    (item) => Number(item.totalStock) > 20
+  ).length;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -129,7 +166,7 @@ const Inventory = () => {
           Inventory Management
         </h1>
         <p className="text-secondary-500 mt-1">
-          Manage stock levels, track product locations, and monitor low stock alerts.
+          Manage stock levels, update product records, and track low stock alerts.
         </p>
       </div>
 
@@ -164,7 +201,9 @@ const Inventory = () => {
             </div>
           </div>
           <h3 className="text-secondary-500 text-sm font-medium">Total Stock Units</h3>
-          <p className="text-2xl font-bold text-secondary-900 mt-1">{totalStockUnits}</p>
+          <p className="text-2xl font-bold text-secondary-900 mt-1">
+            {totalStockUnits}
+          </p>
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-secondary-100 hover:shadow-md transition-shadow">
@@ -178,7 +217,9 @@ const Inventory = () => {
             </div>
           </div>
           <h3 className="text-secondary-500 text-sm font-medium">Low / Out of Stock</h3>
-          <p className="text-2xl font-bold text-secondary-900 mt-1">{lowOrOutCount}</p>
+          <p className="text-2xl font-bold text-secondary-900 mt-1">
+            {lowOrOutCount}
+          </p>
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-secondary-100 hover:shadow-md transition-shadow">
@@ -193,13 +234,13 @@ const Inventory = () => {
           </div>
           <h3 className="text-secondary-500 text-sm font-medium">Healthy Stock</h3>
           <p className="text-2xl font-bold text-secondary-900 mt-1">
-            {filteredItems.filter((item) => item.totalStock > 20).length}
+            {healthyStockCount}
           </p>
         </div>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left side */}
+        {/* Left */}
         <div className="lg:col-span-2 space-y-6">
           {/* Search */}
           <div className="bg-white rounded-2xl shadow-sm border border-secondary-100 p-6">
@@ -215,7 +256,7 @@ const Inventory = () => {
             </div>
           </div>
 
-          {/* Inventory Table */}
+          {/* Table */}
           <div className="bg-white rounded-2xl shadow-sm border border-secondary-100 p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-secondary-900">Inventory List</h2>
@@ -235,7 +276,7 @@ const Inventory = () => {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[700px]">
+                <table className="w-full min-w-[850px]">
                   <thead>
                     <tr className="border-b border-secondary-100">
                       <th className="text-left py-3 px-3 text-sm font-semibold text-secondary-600">
@@ -264,15 +305,18 @@ const Inventory = () => {
                         <td className="py-4 px-3 font-medium text-secondary-900">
                           {item.productType}
                         </td>
+
                         <td className="py-4 px-3 text-secondary-700">
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-secondary-400" />
                             {item.centerLocation}
                           </div>
                         </td>
+
                         <td className="py-4 px-3 text-secondary-900 font-semibold">
                           {item.totalStock}
                         </td>
+
                         <td className="py-4 px-3">
                           <span
                             className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getStatusStyles(
@@ -282,8 +326,17 @@ const Inventory = () => {
                             {getStatus(item.totalStock)}
                           </span>
                         </td>
+
                         <td className="py-4 px-3">
                           <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => handleEdit(item)}
+                              className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-2 rounded-xl text-sm font-medium hover:bg-blue-100 transition"
+                            >
+                              <Pencil className="h-4 w-4" />
+                              Edit
+                            </button>
+
                             <button
                               onClick={() => handleAdjustStock(item._id, 1)}
                               className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3 py-2 rounded-xl text-sm font-medium hover:bg-emerald-100 transition"
@@ -318,11 +371,21 @@ const Inventory = () => {
           </div>
         </div>
 
-        {/* Right side */}
+        {/* Right */}
         <div className="space-y-6">
-          {/* Add Item Card */}
+          {/* Form */}
           <div className="bg-white rounded-2xl shadow-sm border border-secondary-100 p-6">
-            <h2 className="text-lg font-bold text-secondary-900 mb-4">Add Inventory Item</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-secondary-900">
+                {isEditing ? "Update Inventory Item" : "Add Inventory Item"}
+              </h2>
+
+              {isEditing && (
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-blue-50 text-blue-700">
+                  Edit Mode
+                </span>
+              )}
+            </div>
 
             <form onSubmit={handleAddItemSubmit} className="space-y-4">
               <div>
@@ -372,17 +435,43 @@ const Inventory = () => {
 
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white py-3 px-4 rounded-xl hover:bg-primary-700 transition"
+                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition ${
+                  isEditing
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "bg-primary-600 hover:bg-primary-700 text-white"
+                }`}
               >
-                <Plus className="h-4 w-4" />
-                Add Item
+                {isEditing ? (
+                  <>
+                    <Pencil className="h-4 w-4" />
+                    Update Item
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4" />
+                    Add Item
+                  </>
+                )}
               </button>
+
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="w-full flex items-center justify-center gap-2 bg-secondary-100 text-secondary-700 py-3 px-4 rounded-xl hover:bg-secondary-200 transition"
+                >
+                  <X className="h-4 w-4" />
+                  Cancel Edit
+                </button>
+              )}
             </form>
           </div>
 
-          {/* Quick Info Card */}
+          {/* Notes */}
           <div className="bg-white rounded-2xl shadow-sm border border-secondary-100 p-6">
-            <h2 className="text-lg font-bold text-secondary-900 mb-4">Inventory Notes</h2>
+            <h2 className="text-lg font-bold text-secondary-900 mb-4">
+              Inventory Notes
+            </h2>
 
             <div className="space-y-3 text-sm">
               <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl">
@@ -403,6 +492,13 @@ const Inventory = () => {
                 <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
                 <p className="text-red-800">
                   Zero stock means the item is out of stock.
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl">
+                <Pencil className="h-5 w-5 text-blue-600 mt-0.5" />
+                <p className="text-blue-800">
+                  Click Edit on a row to load its details into the form and update it.
                 </p>
               </div>
             </div>
