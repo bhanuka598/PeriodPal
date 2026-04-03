@@ -15,6 +15,8 @@ import {
   Boxes,
   Pencil,
   X,
+  LocateFixed,
+  Globe,
 } from "lucide-react";
 import inventoryService from "../services/inventoryService";
 
@@ -29,6 +31,12 @@ const Inventory = () => {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+
+  // OpenStreetMap / reverse geocode states
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
+  const [locationResult, setLocationResult] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   useEffect(() => {
     fetchInventory();
@@ -128,6 +136,68 @@ const Inventory = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleFindLocation = async () => {
+    if (!lat || !lng) {
+      alert("Please enter latitude and longitude");
+      return;
+    }
+
+    try {
+      setLocationLoading(true);
+      const data = await inventoryService.getNearbyLocation(lat, lng);
+      setLocationResult(data);
+    } catch (error) {
+      console.error("Error fetching location:", error);
+      alert(error.response?.data?.message || "Error fetching location");
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const currentLat = position.coords.latitude;
+        const currentLng = position.coords.longitude;
+
+        setLat(currentLat.toString());
+        setLng(currentLng.toString());
+
+        try {
+          setLocationLoading(true);
+          const data = await inventoryService.getNearbyLocation(
+            currentLat,
+            currentLng
+          );
+          setLocationResult(data);
+        } catch (error) {
+          console.error("Error fetching location:", error);
+          alert(error.response?.data?.message || "Error fetching location");
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        alert("Unable to get current location");
+      }
+    );
+  };
+
+  const handleUseAddressForForm = () => {
+    if (locationResult?.display_name) {
+      setNewItem((prev) => ({
+        ...prev,
+        centerLocation: locationResult.display_name,
+      }));
+    }
+  };
+
   const filteredItems = items.filter(
     (item) =>
       item.productType?.toLowerCase().includes(search.toLowerCase()) ||
@@ -166,7 +236,8 @@ const Inventory = () => {
           Inventory Management
         </h1>
         <p className="text-secondary-500 mt-1">
-          Manage stock levels, update product records, and track low stock alerts.
+          Manage stock levels, update product records, track low stock alerts,
+          and detect locations from coordinates.
         </p>
       </div>
 
@@ -187,7 +258,9 @@ const Inventory = () => {
             </div>
           </div>
           <h3 className="text-secondary-500 text-sm font-medium">Total Items</h3>
-          <p className="text-2xl font-bold text-secondary-900 mt-1">{totalItems}</p>
+          <p className="text-2xl font-bold text-secondary-900 mt-1">
+            {totalItems}
+          </p>
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-secondary-100 hover:shadow-md transition-shadow">
@@ -200,7 +273,9 @@ const Inventory = () => {
               Updated
             </div>
           </div>
-          <h3 className="text-secondary-500 text-sm font-medium">Total Stock Units</h3>
+          <h3 className="text-secondary-500 text-sm font-medium">
+            Total Stock Units
+          </h3>
           <p className="text-2xl font-bold text-secondary-900 mt-1">
             {totalStockUnits}
           </p>
@@ -216,7 +291,9 @@ const Inventory = () => {
               Watch
             </div>
           </div>
-          <h3 className="text-secondary-500 text-sm font-medium">Low / Out of Stock</h3>
+          <h3 className="text-secondary-500 text-sm font-medium">
+            Low / Out of Stock
+          </h3>
           <p className="text-2xl font-bold text-secondary-900 mt-1">
             {lowOrOutCount}
           </p>
@@ -232,7 +309,9 @@ const Inventory = () => {
               Active
             </div>
           </div>
-          <h3 className="text-secondary-500 text-sm font-medium">Healthy Stock</h3>
+          <h3 className="text-secondary-500 text-sm font-medium">
+            Healthy Stock
+          </h3>
           <p className="text-2xl font-bold text-secondary-900 mt-1">
             {healthyStockCount}
           </p>
@@ -259,7 +338,9 @@ const Inventory = () => {
           {/* Table */}
           <div className="bg-white rounded-2xl shadow-sm border border-secondary-100 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-secondary-900">Inventory List</h2>
+              <h2 className="text-lg font-bold text-secondary-900">
+                Inventory List
+              </h2>
               <div className="text-sm text-secondary-500">
                 {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""}
               </div>
@@ -467,6 +548,99 @@ const Inventory = () => {
             </form>
           </div>
 
+          {/* Location Finder */}
+          <div className="bg-white rounded-2xl shadow-sm border border-secondary-100 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="h-5 w-5 text-primary-600" />
+              <h2 className="text-lg font-bold text-secondary-900">
+                Find Location by Coordinates
+              </h2>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-2">
+                  Latitude
+                </label>
+                <input
+                  type="text"
+                  value={lat}
+                  onChange={(e) => setLat(e.target.value)}
+                  placeholder="Enter latitude"
+                  className="w-full px-4 py-3 bg-secondary-50 border border-secondary-200 rounded-xl text-secondary-800 placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-2">
+                  Longitude
+                </label>
+                <input
+                  type="text"
+                  value={lng}
+                  onChange={(e) => setLng(e.target.value)}
+                  placeholder="Enter longitude"
+                  className="w-full px-4 py-3 bg-secondary-50 border border-secondary-200 rounded-xl text-secondary-800 placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleFindLocation}
+                className="w-full bg-primary-600 text-white py-3 px-4 rounded-xl hover:bg-primary-700 transition"
+              >
+                {locationLoading ? "Finding..." : "Find Location"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleUseCurrentLocation}
+                className="w-full flex items-center justify-center gap-2 bg-blue-50 text-blue-700 py-3 px-4 rounded-xl hover:bg-blue-100 transition"
+              >
+                <LocateFixed className="h-4 w-4" />
+                Use Current Location
+              </button>
+
+              {locationResult && (
+                <div className="mt-2 p-4 bg-secondary-50 rounded-xl border border-secondary-100 space-y-3">
+                  <div>
+                    <p className="text-sm text-secondary-500 mb-1">Full Address</p>
+                    <p className="text-secondary-900 font-medium break-words">
+                      {locationResult.display_name}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div className="bg-white rounded-xl p-3 border border-secondary-100">
+                      <p className="text-secondary-500">City / Town</p>
+                      <p className="text-secondary-900 font-medium">
+                        {locationResult.address?.city ||
+                          locationResult.address?.town ||
+                          locationResult.address?.village ||
+                          "-"}
+                      </p>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-3 border border-secondary-100">
+                      <p className="text-secondary-500">Country</p>
+                      <p className="text-secondary-900 font-medium">
+                        {locationResult.address?.country || "-"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleUseAddressForForm}
+                    className="w-full bg-emerald-50 text-emerald-700 py-3 px-4 rounded-xl hover:bg-emerald-100 transition"
+                  >
+                    Use This Address in Inventory Form
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Notes */}
           <div className="bg-white rounded-2xl shadow-sm border border-secondary-100 p-6">
             <h2 className="text-lg font-bold text-secondary-900 mb-4">
@@ -499,6 +673,13 @@ const Inventory = () => {
                 <Pencil className="h-5 w-5 text-blue-600 mt-0.5" />
                 <p className="text-blue-800">
                   Click Edit on a row to load its details into the form and update it.
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-primary-50 rounded-xl">
+                <Globe className="h-5 w-5 text-primary-600 mt-0.5" />
+                <p className="text-primary-800">
+                  Use latitude and longitude to fetch a readable address from your backend OpenStreetMap integration.
                 </p>
               </div>
             </div>
