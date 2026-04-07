@@ -69,6 +69,15 @@ export function Profile() {
       const response = await updateFn(profile._id, formData);
       setProfile(response.data);
       setIsEditModalOpen(false);
+      window.dispatchEvent(
+        new CustomEvent('periodpal:inbox-message', {
+          detail: {
+            title: 'Your profile was updated successfully.',
+            link: '/profile'
+          }
+        })
+      );
+      window.dispatchEvent(new Event('periodpal:notifications-refresh'));
     } catch (err) {
       console.error('Failed to update profile:', err);
       setError(err.response?.data?.message || 'Failed to update profile');
