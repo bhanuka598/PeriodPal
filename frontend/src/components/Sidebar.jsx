@@ -59,12 +59,6 @@ export function Sidebar({ isOpen, closeSidebar }) {
         roles: ['ngo', 'admin']
       },
       {
-        name: 'Donations',
-        path: '/donations',
-        icon: HeartHandshake,
-        roles: ['donor']
-      },
-      {
         name: 'Users',
         path: '/users',
         icon: UsersRound,
