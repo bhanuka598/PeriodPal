@@ -4,6 +4,15 @@ const User = require("../models/User");
 
 const transporter = require("../utils/emailService");
 
+// Helper function to check if date is in the past
+const isPastDate = (dateString) => {
+  const inputDate = new Date(dateString);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  inputDate.setHours(0, 0, 0, 0);
+  return inputDate < today;
+};
+
 // POST /api/records
 exports.createRecord = async (req, res) => {
   try {
@@ -12,6 +21,13 @@ exports.createRecord = async (req, res) => {
     if (!lastPeriodDate || cycleLength === undefined) {
       return res.status(400).json({
         message: "lastPeriodDate and cycleLength are required",
+      });
+    }
+
+    // Validate that date is not in the past
+    if (isPastDate(lastPeriodDate)) {
+      return res.status(400).json({
+        message: "Start date cannot be in the past",
       });
     }
 
@@ -77,7 +93,15 @@ exports.updateRecord = async (req, res) => {
 
     const { lastPeriodDate, flowIntensity, cycleLength, symptoms, notes } = req.body;
 
-    if (lastPeriodDate !== undefined) record.lastPeriodDate = lastPeriodDate;
+    // Validate that date is not in the past if being updated
+    if (lastPeriodDate !== undefined) {
+      if (isPastDate(lastPeriodDate)) {
+        return res.status(400).json({
+          message: "Start date cannot be in the past",
+        });
+      }
+      record.lastPeriodDate = lastPeriodDate;
+    }
     if (cycleLength !== undefined) record.cycleLength = cycleLength;
     if(flowIntensity !== undefined)record.flowIntensity=flowIntensity;
     if (symptoms !== undefined)

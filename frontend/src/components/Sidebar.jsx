@@ -29,7 +29,7 @@ export function Sidebar({ isOpen, closeSidebar }) {
         path: '/dashboard',
         icon: LayoutDashboard,
 
-        roles: ['user', 'beneficiary', 'ngo', 'donor', 'admin']
+        roles: ['beneficiary', 'ngo', 'donor', 'admin']
 
       },
       {
@@ -37,7 +37,7 @@ export function Sidebar({ isOpen, closeSidebar }) {
         path: role === 'admin' ? '/admin/records' : '/records',
         icon: CalendarHeart,
 
-        roles: ['user', 'beneficiary', 'admin']
+        roles: ['beneficiary', 'admin']
       },
       {
         name: 'Donation products',
@@ -57,12 +57,6 @@ export function Sidebar({ isOpen, closeSidebar }) {
         path: '/inventory',
         icon: Warehouse,
         roles: ['ngo', 'admin']
-      },
-      {
-        name: 'Donations',
-        path: '/donations',
-        icon: HeartHandshake,
-        roles: ['donor', 'admin']
       },
       {
         name: 'Users',
