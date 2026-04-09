@@ -156,6 +156,14 @@ export function Register() {
     setPasswordMatch(checkPasswordMatch(password, newConfirmPassword));
   };
 
+  const getRequirementStatus = (password) => ({
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /\d/.test(password),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+  });
+
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setError("");
@@ -650,6 +658,47 @@ export function Register() {
                     </p>
                   )}
                 </div>
+              </div>
+
+              {/* Password Requirements with Visual Indicators */}
+              <div className="bg-secondary-50 p-4 rounded-xl border border-secondary-100">
+                <p className="text-sm font-medium text-secondary-700 mb-3">Password requirements:</p>
+                {(() => {
+                  const checks = getRequirementStatus(password);
+                  const requirements = [
+                    { key: 'length', label: 'At least 8 characters', met: checks.length },
+                    { key: 'uppercase', label: 'One uppercase letter', met: checks.uppercase },
+                    { key: 'lowercase', label: 'One lowercase letter', met: checks.lowercase },
+                    { key: 'number', label: 'One number', met: checks.number },
+                    { key: 'special', label: 'One special character', met: checks.special }
+                  ];
+
+                  return (
+                    <div className="space-y-2">
+                      {requirements.map((req) => (
+                        <div
+                          key={req.key}
+                          className={`flex items-center gap-2 text-sm transition-all duration-300 ${
+                            req.met ? 'text-green-600' : 'text-secondary-500'
+                          }`}
+                        >
+                          <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300 ${
+                            req.met
+                              ? 'bg-green-100 border-2 border-green-500'
+                              : 'bg-secondary-200 border-2 border-secondary-300'
+                          }`}>
+                            {req.met ? (
+                              <Check className="h-3 w-3 text-green-600" />
+                            ) : (
+                              <div className="h-1.5 w-1.5 rounded-full bg-secondary-400" />
+                            )}
+                          </div>
+                          <span className={req.met ? 'font-medium' : ''}>{req.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
 
               <div>
