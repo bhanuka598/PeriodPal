@@ -84,6 +84,7 @@ export function ForgotPassword() {
                 Reset code sent! Check your email and{' '}
                 <Link
                   to="/reset-password"
+                  state={{ email }}
                   className="font-medium underline hover:text-emerald-700"
                 >
                   click here to reset

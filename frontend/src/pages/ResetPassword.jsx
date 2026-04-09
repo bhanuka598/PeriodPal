@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, ArrowLeft, AlertCircle, CheckCircle, Heart, Loader2, Eye, EyeOff, Check } from 'lucide-react';
 import { verifyResetOTP, resetPassword } from '../services/userService';
@@ -18,6 +18,15 @@ export function ResetPassword() {
   const [passwordStrength, setPasswordStrength] = useState(null);
   const [passwordMatch, setPasswordMatch] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Pre-fill email from ForgotPassword page
+  useEffect(() => {
+    const emailFromState = location.state?.email;
+    if (emailFromState) {
+      setEmail(emailFromState);
+    }
+  }, [location.state]);
 
   const checkPasswordStrength = (password) => {
     if (!password) return { strength: '', color: 'text-gray-500', score: 0 };
