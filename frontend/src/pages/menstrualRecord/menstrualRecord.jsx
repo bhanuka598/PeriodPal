@@ -68,6 +68,9 @@ function calculateStats(records) {
 
 export default function MenstrualRecord() {
   
+  // Get today's date in YYYY-MM-DD format for min date attribute
+  const today = new Date().toISOString().split('T')[0];
+
   const [records, setRecords] = useState([]);
   const [flowFilter, setFlowFilter] = useState("all");
   const [sortBy, setSortBy] = useState("startDate");
@@ -463,6 +466,7 @@ export default function MenstrualRecord() {
                 </label>
                 <input
                   type="date"
+                  min={today}
                   value={formData.startDate}
                   onChange={(e) =>
                     handleInputChange("startDate", e.target.value)
@@ -477,6 +481,7 @@ export default function MenstrualRecord() {
                 </label>
                 <input
                   type="date"
+                  min={today}
                   value={formData.endDate}
                   onChange={(e) => handleInputChange("endDate", e.target.value)}
                   className="w-full rounded-xl border border-secondary-200 px-3 py-2.5"
