@@ -59,14 +59,14 @@ exports.registerUser = async (req, res) => {
         const existingUser = await User.findOne({ email: email.toLowerCase() });
         if (existingUser) {
             return res.status(409).json({ 
-                message: "This Gmail address is already registered to an employee." 
+                message: "This email address is already registered." 
             });
         }
 
-        // We convert to lowercase to prevent bypasses like "User@GMAIL.com"
-        if (!email.toLowerCase().endsWith('@gmail.com')) {
+        // Validate email contains @
+        if (!email.includes('@')) {
             return res.status(400).json({ 
-                message: 'Access Denied: Only @gmail.com addresses are permitted in this system.' 
+                message: 'Please enter a valid email address.' 
             });
         }
 
