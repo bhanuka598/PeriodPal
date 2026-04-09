@@ -83,6 +83,7 @@ export function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("");
   const [passwordMatch, setPasswordMatch] = useState("");
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   // Modal states for Terms and Privacy Policy
   const [showModal, setShowModal] = useState(false);
@@ -272,10 +273,12 @@ export function Register() {
         isVerified: true
       });
 
-      setSuccess(res?.data?.message || "Registration successful");
+      // Show success alert and redirect after delay
+      setShowSuccessAlert(true);
       setTimeout(() => {
+        setShowSuccessAlert(false);
         navigate("/login");
-      }, 1200);
+      }, 3000);
     } catch (err) {
       setError(
         err?.response?.data?.message ||
@@ -376,6 +379,40 @@ export function Register() {
               <span>{success}</span>
             </div>
           )}
+
+          {/* Success Alert Modal */}
+          <AnimatePresence>
+            {showSuccessAlert && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: -20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black/30"
+              >
+                <motion.div
+                  className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center border border-green-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Check className="h-10 w-10 text-green-600" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-green-600 mb-2">
+                    Registration Successful!
+                  </h2>
+                  <p className="text-secondary-600 mb-2">
+                    Your account has been created successfully.
+                  </p>
+                  <p className="text-secondary-500 mb-6">
+                    Welcome to PeriodPal!
+                  </p>
+                  <div className="flex items-center justify-center gap-2 text-sm text-secondary-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Redirecting to login page...</span>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Step 1: Email Input */}
           {currentStep === 1 && (
@@ -692,35 +729,6 @@ export function Register() {
                 </button>
               </div>
             </motion.form>
-          )}
-
-          {/* Step 4: Success */}
-          {currentStep === 4 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-8"
-            >
-              <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Check className="h-12 w-12 text-green-600" />
-              </div>
-              <h2 className="text-3xl font-bold text-green-600 mb-2">
-                Registration Successful!
-              </h2>
-              <p className="text-secondary-600 mb-2">
-                Your account has been created successfully.
-              </p>
-              <p className="text-secondary-500 mb-8">
-                Welcome to PeriodPal! Redirecting to login page...
-              </p>
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors"
-              >
-                Go to Login
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </motion.div>
           )}
         </div>
       </motion.div>
