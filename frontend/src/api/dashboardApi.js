@@ -118,6 +118,125 @@ export const getUserDashboardStats = async () => {
 };
 
 /**
+ * Get chart data for Admin - user registration trends over time
+ */
+export const getAdminChartData = async (days = 30) => {
+  try {
+    const [usersRes, ordersRes] = await Promise.all([
+      api.get('/users').catch(() => ({ data: [] })),
+      api.get('/orders/admin/stats').catch(() => ({ data: { paidOrdersCount: 0, unitsPurchased: 0 } }))
+    ]);
+
+    const users = usersRes.data || [];
+
+    // Generate daily registration data
+    const now = Date.now();
+    const dailyData = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(now - i * 24 * 60 * 60 * 1000);
+      const dateStr = date.toISOString().slice(0, 10);
+      const count = users.filter(u => {
+        const created = new Date(u.createdAt);
+        return created.toISOString().slice(0, 10) === dateStr;
+      }).length;
+      dailyData.push({ date: dateStr, total: count, label: 'New Users' });
+    }
+
+    // Calculate role distribution
+    const roleDist = users.reduce((acc, user) => {
+      acc[user.role] = (acc[user.role] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      success: true,
+      dailyTotals: dailyData,
+      roleDistribution: roleDist,
+      totalUsers: users.length
+    };
+  } catch (error) {
+    return { success: false, error: error.message, dailyTotals: [] };
+  }
+};
+
+/**
+ * Get chart data for NGO - inventory distribution
+ */
+export const getNgoChartData = async () => {
+  try {
+    const [inventoryRes, ordersRes] = await Promise.all([
+      api.get('/inventory').catch(() => ({ data: [] })),
+      api.get('/orders/admin/stats').catch(() => ({ data: { paidOrdersCount: 0, unitsPurchased: 0 } }))
+    ]);
+
+    const inventory = inventoryRes.data || [];
+
+    // Group by product type
+    const typeData = inventory.reduce((acc, item) => {
+      const type = item.productType || 'Other';
+      acc[type] = (acc[type] || 0) + (item.totalStock || 0);
+      return acc;
+    }, {});
+
+    const distribution = Object.entries(typeData).map(([name, value]) => ({
+      name,
+      value,
+      color: getChartColor(name)
+    }));
+
+    return {
+      success: true,
+      inventoryDistribution: distribution,
+      totalStock: inventory.reduce((sum, item) => sum + (item.totalStock || 0), 0)
+    };
+  } catch (error) {
+    return { success: false, error: error.message, inventoryDistribution: [] };
+  }
+};
+
+/**
+ * Get chart data for User/Beneficiary - cycle history
+ */
+export const getUserChartData = async () => {
+  try {
+    const recordsRes = await api.get('/records').catch(() => ({ data: [] }));
+    const records = recordsRes.data || [];
+
+    // Sort by date and take last 6 records
+    const sortedRecords = records
+      .sort((a, b) => new Date(a.lastPeriodDate) - new Date(b.lastPeriodDate))
+      .slice(-6);
+
+    const cycleData = sortedRecords.map((record, index) => ({
+      date: record.lastPeriodDate?.slice(0, 10) || '',
+      cycleLength: record.cycleLength || 28,
+      flowIntensity: record.flowIntensity || 'medium',
+      index: index + 1
+    }));
+
+    return {
+      success: true,
+      cycleHistory: cycleData,
+      recordCount: records.length
+    };
+  } catch (error) {
+    return { success: false, error: error.message, cycleHistory: [] };
+  }
+};
+
+// Helper function for chart colors
+function getChartColor(type) {
+  const colors = {
+    'Pads': '#ec4899',
+    'Tampons': '#8b5cf6',
+    'Cups': '#06b6d4',
+    'Liners': '#10b981',
+    'Other': '#f59e0b'
+  };
+  return colors[type] || '#6b7280';
+}
+
+/**
  * Get Admin dashboard stats - comprehensive summary of all system data
  * Uses multiple endpoints to aggregate system-wide statistics
  */
