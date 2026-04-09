@@ -442,7 +442,7 @@ export function Register() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 py-2.5 border border-secondary-200 rounded-xl bg-secondary-50/50 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                    placeholder="your@gmail.com"
+                    placeholder="your@email.com"
                   />
                 </div>
                 <p className="text-xs text-secondary-500 mt-1">
