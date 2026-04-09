@@ -16,6 +16,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { classNames, formatCurrency, isLiveApiSession, getApiErrorMessage } from '../utils/helpers';
 import { getMyDonationData } from '../api/orderApi';
+import { getDashboardStatsByRole } from '../api/dashboardApi';
 
 function DonorOverviewChart({ dailyTotals, rangeDays }) {
   const max = useMemo(
@@ -61,6 +62,12 @@ export function Dashboard() {
   const [chartRange, setChartRange] = useState('30'); // '7' | '30' | '365'
   const [donationRefreshKey, setDonationRefreshKey] = useState(0);
 
+  // Role-based stats loading
+  const [roleStats, setRoleStats] = useState(null);
+  const [roleStatsLoading, setRoleStatsLoading] = useState(false);
+  const [roleStatsError, setRoleStatsError] = useState('');
+  const [roleStatsRefreshKey, setRoleStatsRefreshKey] = useState(0);
+
   const chartDays = chartRange === '7' ? 7 : chartRange === '365' ? 365 : 30;
 
   useEffect(() => {
@@ -100,45 +107,121 @@ export function Dashboard() {
     };
   }, [user?.role, chartDays, donationRefreshKey]);
 
+  // Fetch role-based stats (NGO, User/Beneficiary)
+  useEffect(() => {
+    const role = user?.role;
+    if (role === 'donor' || !isLiveApiSession()) {
+      setRoleStats(null);
+      setRoleStatsError('');
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      setRoleStatsLoading(true);
+      setRoleStatsError('');
+      try {
+        const result = await getDashboardStatsByRole(role);
+        if (cancelled) return;
+        if (result?.success) {
+          setRoleStats(result.stats);
+        } else {
+          setRoleStatsError(result?.error || 'Could not load dashboard stats');
+        }
+      } catch (e) {
+        if (!cancelled) setRoleStatsError(getApiErrorMessage(e, 'Could not load dashboard stats.'));
+      } finally {
+        if (!cancelled) setRoleStatsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.role, roleStatsRefreshKey]);
+
   const getStats = (role) => {
+    const rs = roleStats;
+    const loading = roleStatsLoading;
+
     switch (role) {
       case 'ngo':
+        if (rs && isLiveApiSession()) {
+          return [
+            {
+              label: 'Total Requests',
+              value: (rs.totalRequests || 0).toLocaleString(),
+              icon: Package,
+              trend: 'Live',
+              isPositive: true,
+              color: 'text-blue-600',
+              bg: 'bg-blue-100'
+            },
+            {
+              label: 'Pending Requests',
+              value: String(rs.pendingRequests || 0),
+              icon: Clock,
+              trend: 'Live',
+              isPositive: true,
+              color: 'text-amber-600',
+              bg: 'bg-amber-100'
+            },
+            {
+              label: 'Inventory Items',
+              value: (rs.inventoryItems || 0).toLocaleString(),
+              icon: CheckCircle2,
+              trend: `${rs.inventoryCategories || 0} categories`,
+              isPositive: true,
+              color: 'text-emerald-600',
+              bg: 'bg-emerald-100'
+            },
+            {
+              label: 'Low Stock Items',
+              value: String(rs.lowStockCount || 0),
+              icon: AlertCircle,
+              trend: rs.lowStockCount > 0 ? 'Attention needed' : 'All good',
+              isPositive: rs.lowStockCount === 0,
+              color: rs.lowStockCount > 0 ? 'text-red-600' : 'text-emerald-600',
+              bg: rs.lowStockCount > 0 ? 'bg-red-100' : 'bg-emerald-100'
+            }
+          ];
+        }
         return [
           {
             label: 'Total Requests',
-            value: '1,248',
+            value: loading ? '…' : '0',
             icon: Package,
-            trend: '+12%',
+            trend: '—',
             isPositive: true,
             color: 'text-blue-600',
             bg: 'bg-blue-100'
           },
           {
             label: 'Pending Requests',
-            value: '42',
+            value: loading ? '…' : '0',
             icon: Clock,
-            trend: '-5%',
+            trend: '—',
             isPositive: true,
             color: 'text-amber-600',
             bg: 'bg-amber-100'
           },
           {
             label: 'Inventory Items',
-            value: '8,430',
+            value: loading ? '…' : '0',
             icon: CheckCircle2,
-            trend: '+24%',
+            trend: '—',
             isPositive: true,
             color: 'text-emerald-600',
             bg: 'bg-emerald-100'
           },
           {
-            label: 'Items Near Goal',
-            value: '3',
+            label: 'Low Stock Items',
+            value: loading ? '…' : '0',
             icon: AlertCircle,
-            trend: '+2',
-            isPositive: false,
-            color: 'text-red-600',
-            bg: 'bg-red-100'
+            trend: '—',
+            isPositive: true,
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-100'
           }
         ];
 
@@ -225,39 +308,79 @@ export function Dashboard() {
 
       case 'user':
       case 'beneficiary':
+        if (rs && isLiveApiSession()) {
+          return [
+            {
+              label: 'Current Cycle Day',
+              value: rs.currentCycleDay || 'Not tracked',
+              icon: Calendar,
+              trend: rs.cyclePhase || '—',
+              isPositive: true,
+              color: 'text-primary-600',
+              bg: 'bg-primary-100'
+            },
+            {
+              label: 'Next Period In',
+              value: rs.nextPeriodIn || '—',
+              icon: Clock,
+              trend: rs.hasRecord ? 'Tracking active' : 'Set up tracking',
+              isPositive: true,
+              color: rs.hasRecord ? 'text-purple-600' : 'text-secondary-500',
+              bg: rs.hasRecord ? 'bg-purple-100' : 'bg-secondary-100'
+            },
+            {
+              label: 'Active Requests',
+              value: String(rs.activeRequests || 0),
+              icon: Package,
+              trend: rs.activeRequests > 0 ? 'Processing' : 'No active requests',
+              isPositive: true,
+              color: rs.activeRequests > 0 ? 'text-amber-600' : 'text-emerald-600',
+              bg: rs.activeRequests > 0 ? 'bg-amber-100' : 'bg-emerald-100'
+            },
+            {
+              label: 'Products Received',
+              value: String(rs.productsReceived || 0),
+              icon: CheckCircle2,
+              trend: `${rs.recordCount || 0} records logged`,
+              isPositive: true,
+              color: 'text-emerald-600',
+              bg: 'bg-emerald-100'
+            }
+          ];
+        }
         return [
           {
             label: 'Current Cycle Day',
-            value: 'Day 14',
+            value: loading ? '…' : 'Not tracked',
             icon: Calendar,
-            trend: 'Ovulation phase',
+            trend: '—',
             isPositive: true,
             color: 'text-primary-600',
             bg: 'bg-primary-100'
           },
           {
             label: 'Next Period In',
-            value: '14 Days',
+            value: loading ? '…' : '—',
             icon: Clock,
-            trend: 'Expected Oct 28',
+            trend: 'Set up tracking',
             isPositive: true,
-            color: 'text-purple-600',
-            bg: 'bg-purple-100'
+            color: 'text-secondary-500',
+            bg: 'bg-secondary-100'
           },
           {
             label: 'Active Requests',
-            value: '1',
+            value: loading ? '…' : '0',
             icon: Package,
-            trend: 'Processing',
+            trend: '—',
             isPositive: true,
-            color: 'text-amber-600',
-            bg: 'bg-amber-100'
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-100'
           },
           {
             label: 'Products Received',
-            value: '3',
+            value: loading ? '…' : '0',
             icon: CheckCircle2,
-            trend: 'This year',
+            trend: '—',
             isPositive: true,
             color: 'text-emerald-600',
             bg: 'bg-emerald-100'
@@ -308,6 +431,11 @@ export function Dashboard() {
         {isDonor && donorError && (
           <p className="mt-3 text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
             {donorError}
+          </p>
+        )}
+        {roleStatsError && !isDonor && (
+          <p className="mt-3 text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+            {roleStatsError}
           </p>
         )}
       </div>
