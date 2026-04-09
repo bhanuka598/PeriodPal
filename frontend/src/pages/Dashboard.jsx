@@ -387,6 +387,86 @@ export function Dashboard() {
           }
         ];
 
+      case 'admin':
+        if (rs && isLiveApiSession()) {
+          return [
+            {
+              label: 'Total Users',
+              value: (rs.totalUsers || 0).toLocaleString(),
+              icon: Users,
+              trend: `${rs.totalDonors || 0} donors, ${rs.totalBeneficiaries || 0} beneficiaries`,
+              isPositive: true,
+              color: 'text-blue-600',
+              bg: 'bg-blue-100'
+            },
+            {
+              label: 'Total Inventory',
+              value: (rs.totalInventory || 0).toLocaleString(),
+              icon: Package,
+              trend: `${rs.inventoryCategories || 0} categories`,
+              isPositive: true,
+              color: 'text-emerald-600',
+              bg: 'bg-emerald-100'
+            },
+            {
+              label: 'Total Donations',
+              value: (rs.totalDonations || 0).toLocaleString(),
+              icon: Heart,
+              trend: `${rs.totalOrders || 0} orders`,
+              isPositive: true,
+              color: 'text-primary-600',
+              bg: 'bg-primary-100'
+            },
+            {
+              label: 'Health Records',
+              value: (rs.totalRecords || 0).toLocaleString(),
+              icon: CheckCircle2,
+              trend: rs.irregularCycles > 0 ? `${rs.irregularCycles} need attention` : 'All normal',
+              isPositive: rs.irregularCycles === 0,
+              color: rs.irregularCycles > 0 ? 'text-amber-600' : 'text-emerald-600',
+              bg: rs.irregularCycles > 0 ? 'bg-amber-100' : 'bg-emerald-100'
+            }
+          ];
+        }
+        return [
+          {
+            label: 'Total Users',
+            value: loading ? '…' : '0',
+            icon: Users,
+            trend: '—',
+            isPositive: true,
+            color: 'text-blue-600',
+            bg: 'bg-blue-100'
+          },
+          {
+            label: 'Total Inventory',
+            value: loading ? '…' : '0',
+            icon: Package,
+            trend: '—',
+            isPositive: true,
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-100'
+          },
+          {
+            label: 'Total Donations',
+            value: loading ? '…' : '0',
+            icon: Heart,
+            trend: '—',
+            isPositive: true,
+            color: 'text-primary-600',
+            bg: 'bg-primary-100'
+          },
+          {
+            label: 'Health Records',
+            value: loading ? '…' : '0',
+            icon: CheckCircle2,
+            trend: '—',
+            isPositive: true,
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-100'
+          }
+        ];
+
       default:
         return getStats('beneficiary');
     }

@@ -118,11 +118,81 @@ export const getUserDashboardStats = async () => {
 };
 
 /**
+ * Get Admin dashboard stats - comprehensive summary of all system data
+ * Uses multiple endpoints to aggregate system-wide statistics
+ */
+export const getAdminDashboardStats = async () => {
+  try {
+    const [usersRes, inventoryRes, ordersRes, recordsRes] = await Promise.all([
+      api.get('/users').catch(() => ({ data: [] })),
+      api.get('/inventory').catch(() => ({ data: [] })),
+      api.get('/orders/admin/stats').catch(() => ({ data: { paidOrdersCount: 0, unitsPurchased: 0 } })),
+      api.get('/records/admin/all').catch(() => ({ data: { records: [], analytics: {} } }))
+    ]);
+
+    const users = usersRes.data || [];
+    const inventory = inventoryRes.data || [];
+    const ordersStats = ordersRes.data || {};
+    const recordsData = recordsRes.data || {};
+    const records = recordsData.records || [];
+    const recordsAnalytics = recordsData.analytics || {};
+
+    // Calculate user stats by role
+    const usersByRole = users.reduce((acc, user) => {
+      acc[user.role] = (acc[user.role] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Calculate inventory stats
+    const totalStock = inventory.reduce((sum, item) => sum + (item.totalStock || 0), 0);
+    const lowStockItems = inventory.filter(item => item.totalStock <= 20).length;
+
+    // Calculate total donations value from paid orders
+    const totalDonations = ordersStats.unitsPurchased || 0;
+    const paidOrdersCount = ordersStats.paidOrdersCount || 0;
+
+    return {
+      success: true,
+      stats: {
+        // User statistics
+        totalUsers: users.length,
+        totalDonors: usersByRole.donor || 0,
+        totalNgos: usersByRole.ngo || 0,
+        totalBeneficiaries: (usersByRole.user || 0) + (usersByRole.beneficiary || 0),
+        totalAdmins: usersByRole.admin || 0,
+
+        // Inventory statistics
+        totalInventory: totalStock,
+        inventoryCategories: inventory.length,
+        lowStockItems: lowStockItems,
+
+        // Order/Donation statistics
+        totalDonations: totalDonations,
+        totalOrders: paidOrdersCount,
+
+        // Menstrual records statistics
+        totalRecords: recordsAnalytics.totalRecords || records.length,
+        averageCycleLength: recordsAnalytics.averageCycleLength || 0,
+        irregularCycles: recordsAnalytics.irregularCycles || 0
+      }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      stats: null
+    };
+  }
+};
+
+/**
  * Get dashboard stats based on user role
- * @param {string} role - user role (ngo, donor, user, beneficiary)
+ * @param {string} role - user role (ngo, donor, user, beneficiary, admin)
  */
 export const getDashboardStatsByRole = async (role) => {
   switch (role) {
+    case 'admin':
+      return getAdminDashboardStats();
     case 'ngo':
       return getNgoDashboardStats();
     case 'user':
