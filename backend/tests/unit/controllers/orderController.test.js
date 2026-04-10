@@ -9,6 +9,7 @@ jest.mock('../../../src/models/Order');
 jest.mock('../../../src/models/Cart');
 jest.mock('../../../src/models/Product');
 jest.mock('../../../src/utils/sendEmail');
+jest.mock('../../../src/utils/asyncHandler', () => (fn) => fn);
 jest.mock('stripe', () => {
   return jest.fn().mockImplementation(() => ({
     checkout: {
@@ -158,7 +159,7 @@ describe('Order Controller', () => {
         orderStatus: 'PENDING',
         contactInfo: { email: 'test@example.com' },
         items: [
-          { productId: { _id: 'prod1', name: 'Product 1', stockQty: 10 }, qty: 2, priceAtTime: 10 }
+          { productId: { _id: 'prod1', name: 'Product 1', stockQty: 10, save: jest.fn().mockResolvedValue(true) }, qty: 2, priceAtTime: 10 }
         ],
         total: 20,
         save: jest.fn().mockResolvedValue(true)
