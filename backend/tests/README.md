@@ -42,10 +42,20 @@ tests/
 │       ├── otpController.test.js     # OTP controller tests
 │       ├── productController.test.js # Product controller tests
 │       └── userController.test.js    # User controller tests
+│   └── integration/                   # Integration tests (8 test suites)
+│       ├── setup.js                  # Integration test environment setup
+│       ├── auth.integration.test.js   # Auth API integration tests
+│       ├── product.integration.test.js    # Product API integration tests
+│       ├── cart.integration.test.js       # Cart API integration tests
+│       ├── order.integration.test.js      # Order API integration tests
+│       ├── user.integration.test.js       # User API integration tests
+│       ├── menstrualRecord.integration.test.js  # Menstrual record API integration tests
+│       └── inventory.integration.test.js      # Inventory API integration tests
 ```
 
 ## Coverage Summary
 
+### Unit Tests
 ### Models (7 total)
 - **Cart**: Schema validation, item validation, status enum, CRUD operations
 - **Inventory**: Stock validation, unique constraints, location indexing
@@ -66,8 +76,18 @@ tests/
 - **productController**: CRUD, image upload, search/filter
 - **userController**: Profile management, admin user management
 
+### Integration Tests (8 total)
+- **Auth API**: Full auth flow (register, login, get profile), error scenarios, token validation
+- **Product API**: CRUD operations with authentication, filtering, search, validation errors
+- **Cart API**: Add/remove items, guest cart, cart merge, summary calculations
+- **Order API**: Complete checkout flow, payment processing, stock updates, contact management
+- **User API**: Profile management, password updates, admin operations (CRUD users)
+- **Menstrual Record API**: CRUD operations, date validation, email reminders, analytics
+- **Inventory API**: CRUD operations, stock adjustments, filtering, geocoding
+
 ## Key Testing Concepts
 
+### Unit Testing
 1. **Isolation**: Each test runs with a clean database state (MongoDB Memory Server)
 2. **Mocking**: External dependencies (email services, Stripe, APIs) are mocked
 3. **Coverage**: Tests cover:
@@ -77,14 +97,37 @@ tests/
    - Error handling and server errors
    - Security scenarios (unauthorized access)
 
+### Integration Testing
+1. **End-to-End API Testing**: Tests actual HTTP requests through the full Express application
+2. **Database Integration**: Real MongoDB operations with in-memory database
+3. **Authentication Flow**: Tests complete auth flows (register → login → protected routes)
+4. **Multi-Resource Workflows**: Tests interactions between different resources (cart → order → payment)
+5. **Error Scenarios**: Tests validation errors, unauthorized access, and edge cases
+6. **Guest vs Authenticated Users**: Tests both guest and authenticated user flows
+
 ## Running Specific Test Files
 
 ```bash
-# Test specific model
+# Test specific model (unit)
 npm test -- MenstrualRecord.test.js
 
-# Test specific controller
+# Test specific controller (unit)
 npm test -- authController.test.js
+
+# Test specific integration suite
+npm test -- auth.integration.test.js
+npm test -- product.integration.test.js
+npm test -- cart.integration.test.js
+npm test -- order.integration.test.js
+npm test -- user.integration.test.js
+npm test -- menstrualRecord.integration.test.js
+npm test -- inventory.integration.test.js
+
+# Run only unit tests
+npm test -- --testPathPattern="unit/"
+
+# Run only integration tests
+npm test -- --testPathPattern="integration/"
 
 # Test with pattern
 npm test -- --testNamePattern="should create"
@@ -95,14 +138,24 @@ npm test -- --onlyFailures
 
 ## Adding New Tests
 
+### Unit Tests
 1. Create test file in appropriate `tests/unit/` subdirectory
 2. Import the module being tested
 3. Mock external dependencies using `jest.mock()`
 4. Write test cases using `describe()` and `it()` blocks
 5. Use `beforeEach()` to reset state between tests
 
+### Integration Tests
+1. Create test file in `tests/integration/` directory
+2. Import the app from `./setup` and required models
+3. Write test cases that make actual HTTP requests using supertest
+4. Use `beforeEach()` to create test data and `afterEach()` for cleanup
+5. Test complete flows (e.g., register → login → get profile)
+6. Include error scenarios (invalid data, unauthorized access, etc.)
+
 ### Example Test Pattern
 
+#### Unit Test Example
 ```javascript
 const controller = require('../../../src/controllers/myController');
 const Model = require('../../../src/models/MyModel');
@@ -132,6 +185,54 @@ describe('MyController', () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       success: true
     }));
+  });
+});
+```
+
+#### Integration Test Example
+```javascript
+const request = require('supertest');
+const { app } = require('./setup');
+const Model = require('../../src/models/MyModel');
+
+describe('My API Integration Tests', () => {
+  let authToken;
+
+  beforeEach(async () => {
+    // Setup: Create test user and get token
+    const user = await User.create({
+      username: 'testuser',
+      email: 'test@example.com',
+      password: 'Test@1234',
+      role: 'beneficiary',
+      location: 'Colombo'
+    });
+
+    const loginResponse = await request(app)
+      .post('/api/users/login')
+      .send({ email: 'test@example.com', password: 'Test@1234' });
+
+    authToken = loginResponse.body.token;
+  });
+
+  it('should create resource with authentication', async () => {
+    const response = await request(app)
+      .post('/api/resources')
+      .set('Authorization', authToken)
+      .send({ name: 'Test Resource' })
+      .expect(201);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.resource.name).toBe('Test Resource');
+  });
+
+  it('should fail without authentication', async () => {
+    const response = await request(app)
+      .post('/api/resources')
+      .send({ name: 'Test Resource' })
+      .expect(401);
+
+    expect(response.body.success).toBe(false);
   });
 });
 ```
