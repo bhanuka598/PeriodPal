@@ -178,7 +178,7 @@ describe('Auth API Integration Tests', () => {
     });
   });
 
-  describe('GET /api/auth/me', () => {
+  describe('GET /api/users/profile', () => {
     let authToken;
     let userId;
 
@@ -205,26 +205,31 @@ describe('Auth API Integration Tests', () => {
 
     it('should get current user with valid token', async () => {
       const response = await request(app)
-        .get('/api/auth/me')
-        .set('Authorization', authToken)
+        .get('/api/users/profile')
+        .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      expect(response.body.success).toBe(true);
-      expect(response.body.user).toHaveProperty('_id');
-      expect(response.body.user.email).toBe('test@example.com');
+      expect(response.body).toHaveProperty('_id');
+      expect(response.body.email).toBe('test@example.com');
+      expect(response.body.username).toBe('testuser');
+      expect(response.body).not.toHaveProperty('password');
     });
 
     it('should fail to get current user without token', async () => {
       const response = await request(app)
-        .get('/api/auth/me')
+        .get('/api/users/profile')
         .expect(401);
+
+      expect(response.body.message).toContain('Not authorized');
     });
 
     it('should fail to get current user with invalid token', async () => {
       const response = await request(app)
-        .get('/api/auth/me')
+        .get('/api/users/profile')
         .set('Authorization', 'Bearer invalidtoken')
         .expect(401);
+
+      expect(response.body.message).toContain('Not authorized');
     });
   });
 
@@ -260,12 +265,12 @@ describe('Auth API Integration Tests', () => {
 
       // Step 3: Get profile
       const profileResponse = await request(app)
-        .get('/api/auth/me')
-        .set('Authorization', token)
+        .get('/api/users/profile')
+        .set('Authorization', `Bearer ${token}`)
         .expect(200);
 
-      expect(profileResponse.body.user.email).toBe(registerData.email);
-      expect(profileResponse.body.user.username).toBe(registerData.username);
+      expect(profileResponse.body.email).toBe(registerData.email);
+      expect(profileResponse.body.username).toBe(registerData.username);
     });
   });
 });
