@@ -8,6 +8,12 @@ const sendEmail = require("../utils/sendEmail");
 const Stripe = require("stripe");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+/** Vercel / production frontend origin (prefer CLIENT_URL; FRONTEND_URL kept for compatibility). */
+function clientPublicUrl() {
+  const base = process.env.CLIENT_URL || process.env.FRONTEND_URL;
+  return base ? String(base).replace(/\/$/, "") : "";
+}
+
 /**
  * Cart model stores userId as String; Order uses Mixed (often ObjectId in BSON).
  * Always use a string for logged-in users when writing, and match both string + ObjectId when reading orders.
@@ -565,8 +571,8 @@ exports.createStripePayment = asyncHandler(async (req, res) => {
       userId: userId.toString(),
     },
 
-    success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
+    success_url: `${clientPublicUrl()}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${clientPublicUrl()}/payment-cancel`,
   });
 
   // save session id (optional)

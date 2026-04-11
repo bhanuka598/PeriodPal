@@ -11,6 +11,11 @@ export function PaymentSuccess() {
   const demo = params.get('demo');
 
   useEffect(() => {
+    console.log('Stripe session id:', sessionId);
+    console.log('Order id:', orderId);
+  }, [sessionId, orderId]);
+
+  useEffect(() => {
     setPaymentSessionHint();
     window.dispatchEvent(
       new CustomEvent('periodpal:inbox-message', {
@@ -41,10 +46,11 @@ export function PaymentSuccess() {
         {demo ? ' (demo payment)' : ''}. A confirmation email may follow if mail
         is configured on the server.
       </p>
-      {orderId && (
-        <p className="text-sm text-ink-muted mb-8 font-mono bg-white px-4 py-2 rounded-xl border border-blush/30">
-          Order ID: {orderId}
-        </p>
+      {(sessionId || orderId) && (
+        <div className="text-sm text-ink-muted mb-8 space-y-2 font-mono bg-white px-4 py-3 rounded-xl border border-blush/30 text-left max-w-lg mx-auto">
+          {sessionId && <p>Session ID: {sessionId}</p>}
+          {orderId && <p>Order ID: {orderId}</p>}
+        </div>
       )}
       <div className="flex flex-wrap gap-3 justify-center">
         <Link
