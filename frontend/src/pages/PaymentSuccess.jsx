@@ -43,15 +43,19 @@ export function PaymentSuccess() {
         {demo ? ' (demo payment)' : ''}. A confirmation email may follow if mail
         is configured on the server.
       </p>
-      {sessionId && (
-        <p className="text-xs text-ink-muted mb-2 font-mono bg-white px-4 py-2 rounded-xl border border-blush/30 break-all max-w-lg mx-auto">
-          Session ID: {sessionId}
-        </p>
-      )}
-      {orderId && (
-        <p className="text-sm text-ink-muted mb-8 font-mono bg-white px-4 py-2 rounded-xl border border-blush/30">
-          Order ID: {orderId}
-        </p>
+      {(sessionId || orderId) && (
+        <div className="text-sm text-ink-muted mb-8 space-y-2 font-mono bg-white px-4 py-3 rounded-xl border border-blush/30 text-left max-w-lg mx-auto">
+          {sessionId && (
+            <p>
+              <span className="text-ink-muted">Session ID:</span> {sessionId}
+            </p>
+          )}
+          {orderId && (
+            <p>
+              <span className="text-ink-muted">Order ID:</span> {orderId}
+            </p>
+          )}
+        </div>
       )}
       <div className="flex flex-wrap gap-3 justify-center">
         <Link

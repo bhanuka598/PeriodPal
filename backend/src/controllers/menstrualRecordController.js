@@ -2,7 +2,7 @@ const MenstrualRecord = require("../models/MenstrualRecord");
 const mongoose = require("mongoose");
 const User = require("../models/User");
 
-const transporter = require("../utils/emailService");
+const { transporter } = require("../utils/emailService");
 
 // Helper function to check if date is in the past
 const isPastDate = (dateString) => {
