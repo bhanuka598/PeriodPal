@@ -78,6 +78,10 @@ export function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
+          {/* Stripe return URLs — must be outside ProtectedRoute so redirect works even if session is flaky */}
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-cancel" element={<PaymentCancel />} />
+
           {/* Logged-in app shell: dashboard, donations, shop, cart, checkout (stays signed in) */}
           <Route
             element={
@@ -145,8 +149,6 @@ export function App() {
             <Route path="/shop" element={<Shop />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/payment-success" element={<PaymentSuccess />} />
-            <Route path="/payment-cancel" element={<PaymentCancel />} />
           </Route>
 
           {/* Marketing site (shop requires login — use /shop after sign-in) */}

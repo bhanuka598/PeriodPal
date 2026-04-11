@@ -554,6 +554,14 @@ exports.createStripePayment = asyncHandler(async (req, res) => {
     };
   });
 
+  const clientOrigin = (process.env.CLIENT_URL || process.env.FRONTEND_URL || "").trim();
+  if (!clientOrigin) {
+    return res.status(500).json({
+      success: false,
+      message: "Set CLIENT_URL (or FRONTEND_URL) to your deployed frontend origin, e.g. https://period-pal-six.vercel.app",
+    });
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     payment_method_types: ["card"],
@@ -565,8 +573,8 @@ exports.createStripePayment = asyncHandler(async (req, res) => {
       userId: userId.toString(),
     },
 
-    success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
+    success_url: `${clientOrigin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${clientOrigin}/payment-cancel`,
   });
 
   // save session id (optional)
