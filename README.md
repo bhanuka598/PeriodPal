@@ -356,8 +356,6 @@ https://periodpal-frontend.vercel.app
 
 #### Backend Deployment Verification
 
-![Backend Deployment Screenshot](./screenshots/backend-deployment.png)
-
 **Verification Steps:**
 1. Visit the backend health endpoint: `https://periodpal-backend.onrender.com/`
 2. Expected response: `"PeriodPal API is running..."`
@@ -367,8 +365,6 @@ https://periodpal-frontend.vercel.app
    ```
 
 #### Frontend Deployment Verification
-
-![Frontend Deployment Screenshot](./screenshots/frontend-deployment.png)
 
 **Verification Steps:**
 1. Visit the frontend URL: `https://periodpal-frontend.vercel.app`
