@@ -6,6 +6,7 @@ import { setPaymentSessionHint } from '../utils/notificationPrefs';
 
 export function PaymentSuccess() {
   const [params] = useSearchParams();
+  const sessionId = params.get('session_id');
   const orderId = params.get('orderId');
   const demo = params.get('demo');
 
