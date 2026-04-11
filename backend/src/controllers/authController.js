@@ -1,46 +1,6 @@
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 
-const DEMO_LOGIN_PASSWORD = "admin";
-const DEMO_EMAIL_TO_ROLE = {
-    "admin@test.com": "admin",
-    "user@test.com": "beneficiary",
-    "ngo@test.com": "ngo",
-    "donor@test.com": "donor",
-};
-
-async function findUserForDemoLogin(email, password) {
-    const normalizedEmail = String(email || "").trim().toLowerCase();
-
-    if (password !== DEMO_LOGIN_PASSWORD) {
-        return null;
-    }
-
-    const role = DEMO_EMAIL_TO_ROLE[normalizedEmail];
-    if (!role) {
-        return null;
-    }
-
-    // Try to find existing user with this role
-    let user = await User.findOne({ role }).sort({ createdAt: 1 });
-    
-    if (!user) {
-        // Create demo user if doesn't exist
-        console.log(`Creating demo ${role} user for ${email}`);
-        user = await User.create({
-            username: email.split('@')[0],
-            email: normalizedEmail,
-            password: DEMO_LOGIN_PASSWORD, // This will be hashed by pre-save hook
-            role,
-            location: 'Demo Location',
-            eligibleForSupport: role === 'beneficiary',
-            isVerified: true
-        });
-    }
-
-    return user;
-}
-
 // ================= REGISTER =================
 exports.registerUser = async (req, res) => {
     try {
@@ -59,14 +19,14 @@ exports.registerUser = async (req, res) => {
         const existingUser = await User.findOne({ email: email.toLowerCase() });
         if (existingUser) {
             return res.status(409).json({ 
-                message: "This Gmail address is already registered to an employee." 
+                message: "This email address is already registered." 
             });
         }
 
-        // We convert to lowercase to prevent bypasses like "User@GMAIL.com"
-        if (!email.toLowerCase().endsWith('@gmail.com')) {
+        // Validate email contains @
+        if (!email.includes('@')) {
             return res.status(400).json({ 
-                message: 'Access Denied: Only @gmail.com addresses are permitted in this system.' 
+                message: 'Please enter a valid email address.' 
             });
         }
 
@@ -175,32 +135,15 @@ exports.loginUser = async (req, res) => {
         console.log('User found:', user ? { id: user._id, email: user.email } : 'No user found');
 
         if (!user) {
-            // Check for demo login
-            const demoUser = await findUserForDemoLogin(email, password);
-            if (demoUser) {
-                console.log('Demo login successful for:', email);
-                return res.json({
-                    _id: demoUser._id,
-                    username: demoUser.username,
-                    email: demoUser.email,
-                    role: demoUser.role,
-                    token: generateToken(demoUser._id)
-                });
-            }
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
-        // Check if this is a demo user (created with demo password)
-        const isDemoUser = DEMO_EMAIL_TO_ROLE[String(email || "").trim().toLowerCase()] && password === DEMO_LOGIN_PASSWORD;
+        const isMatch = await user.matchPassword(password);
         
-        if (!isDemoUser) {
-            const isMatch = await user.matchPassword(password);
-            
-            console.log('Password match:', isMatch);
+        console.log('Password match:', isMatch);
 
-            if (!isMatch) {
-                return res.status(401).json({ message: "Invalid email or password" });
-            }
+        if (!isMatch) {
+            return res.status(401).json({ message: "Invalid email or password" });
         }
 
         res.json({

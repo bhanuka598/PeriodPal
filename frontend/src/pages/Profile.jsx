@@ -308,6 +308,7 @@ export function Profile() {
                     value={formData.username}
                     onChange={handleInputChange}
                     readOnly
+                    disabled
                     className="block w-full px-4 py-2.5 border border-secondary-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors bg-secondary-50/50"
                     placeholder="Enter your name"
                   />
@@ -323,6 +324,7 @@ export function Profile() {
                     value={formData.email}
                     onChange={handleInputChange}
                     readOnly
+                    disabled
                     className="block w-full px-4 py-2.5 border border-secondary-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors bg-secondary-50/50"
                     placeholder="Enter your email"
                   />
