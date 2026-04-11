@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmail = async (to, subject, html) => {
+async function sendEmail(to, subject, html) {
   try {
     const info = await transporter.sendMail({
       from: `"PeriodPal" <${process.env.EMAIL_USER}>`,
@@ -22,12 +22,13 @@ const sendEmail = async (to, subject, html) => {
       subject,
       html,
     });
+
     console.log("Email sent:", info.messageId);
     return info;
   } catch (error) {
     console.error("Email sending failed:", error.message);
     return null;
   }
-};
+}
 
 module.exports = sendEmail;

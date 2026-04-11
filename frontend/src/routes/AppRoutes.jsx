@@ -16,15 +16,12 @@ import { PaymentCancel } from '../pages/PaymentCancel';
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Stripe routes */}
       <Route path="/payment-success" element={<PaymentSuccess />} />
       <Route path="/payment-cancel" element={<PaymentCancel />} />
 
-      {/* Protected routes with layout */}
       <Route
         element={
           <ProtectedRoute>
@@ -71,7 +68,6 @@ export function AppRoutes() {
         />
       </Route>
 
-      {/* Default routes */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

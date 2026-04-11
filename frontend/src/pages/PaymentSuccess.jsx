@@ -13,9 +13,6 @@ export function PaymentSuccess() {
   useEffect(() => {
     console.log('Stripe session id:', sessionId);
     console.log('Order id:', orderId);
-  }, [sessionId, orderId]);
-
-  useEffect(() => {
     setPaymentSessionHint();
     window.dispatchEvent(
       new CustomEvent('periodpal:inbox-message', {
@@ -27,7 +24,7 @@ export function PaymentSuccess() {
     );
     window.dispatchEvent(new Event('periodpal:donations-updated'));
     window.dispatchEvent(new Event('periodpal:notifications-refresh'));
-  }, []);
+  }, [sessionId, orderId]);
 
   return (
     <motion.div
@@ -46,11 +43,15 @@ export function PaymentSuccess() {
         {demo ? ' (demo payment)' : ''}. A confirmation email may follow if mail
         is configured on the server.
       </p>
-      {(sessionId || orderId) && (
-        <div className="text-sm text-ink-muted mb-8 space-y-2 font-mono bg-white px-4 py-3 rounded-xl border border-blush/30 text-left max-w-lg mx-auto">
-          {sessionId && <p>Session ID: {sessionId}</p>}
-          {orderId && <p>Order ID: {orderId}</p>}
-        </div>
+      {sessionId && (
+        <p className="text-xs text-ink-muted mb-2 font-mono bg-white px-4 py-2 rounded-xl border border-blush/30 break-all max-w-lg mx-auto">
+          Session ID: {sessionId}
+        </p>
+      )}
+      {orderId && (
+        <p className="text-sm text-ink-muted mb-8 font-mono bg-white px-4 py-2 rounded-xl border border-blush/30">
+          Order ID: {orderId}
+        </p>
       )}
       <div className="flex flex-wrap gap-3 justify-center">
         <Link

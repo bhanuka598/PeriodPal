@@ -14,7 +14,9 @@ const sendLowStockEmail = async ({ to, productType, totalStock, centerLocation }
       pass: process.env.EMAIL_PASS,
     },
     family: 4,
-    tls: { rejectUnauthorized: false },
+    tls: {
+      rejectUnauthorized: false,
+    },
   });
 
   const limit = Number(process.env.LOW_STOCK_LIMIT || 20);
