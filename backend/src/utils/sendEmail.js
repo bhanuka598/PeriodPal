@@ -1,9 +1,16 @@
+const dns = require("dns");
 const nodemailer = require("nodemailer");
+const { smtpLookupIPv4 } = require("./smtpLookup");
+
+if (typeof dns.setDefaultResultOrder === "function") {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
   secure: false,
+  lookup: smtpLookupIPv4,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -19,7 +26,7 @@ const transporter = nodemailer.createTransport({
 async function sendEmail(to, subject, html) {
   try {
     const info = await transporter.sendMail({
-      from: `"PeriodPal" <${process.env.EMAIL_USER}>`,
+      from: `"PeriodPal 💜" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
