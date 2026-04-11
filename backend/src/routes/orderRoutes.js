@@ -9,6 +9,7 @@ const {
   updateOrder,
   deleteOrder,
   createStripePayment,
+  verifyStripeSession,
   stripeWebhook,
   getAdminDonationStats,
   getMyDonationData,
@@ -29,6 +30,9 @@ router.get(
   authorizeRoles("admin"),
   getAdminDonationStats
 );
+
+// Must be before GET /:orderId or the param route catches this path.
+router.get("/verify-stripe-session", verifyStripeSession);
 
 // Donor dashboard (must be before GET /:orderId or "donor-summary" is treated as an order id)
 router.get("/:orderId", protect, getMyDonationData);

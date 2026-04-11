@@ -1,29 +1,55 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { HeartHandshake } from 'lucide-react';
 import { setPaymentSessionHint } from '../utils/notificationPrefs';
+import { verifyStripeSession } from '../api/orderApi';
 
 export function PaymentSuccess() {
   const [params] = useSearchParams();
   const sessionId = params.get('session_id');
   const orderId = params.get('orderId');
   const demo = params.get('demo');
+  const [verifyStatus, setVerifyStatus] = useState(null);
 
   useEffect(() => {
-    console.log('Stripe session id:', sessionId);
-    console.log('Order id:', orderId);
-    setPaymentSessionHint();
-    window.dispatchEvent(
-      new CustomEvent('periodpal:inbox-message', {
-        detail: {
-          title: 'Payment confirmed — thank you for your support.',
-          link: '/donations'
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        if (sessionId) {
+          setVerifyStatus('verifying');
+          await verifyStripeSession(sessionId);
+          if (!cancelled) setVerifyStatus('ok');
         }
-      })
-    );
-    window.dispatchEvent(new Event('periodpal:donations-updated'));
-    window.dispatchEvent(new Event('periodpal:notifications-refresh'));
+      } catch (e) {
+        console.error('Stripe verify failed:', e);
+        if (!cancelled) {
+          setVerifyStatus(
+            e.response?.data?.message || 'Could not confirm payment with the server.'
+          );
+        }
+      }
+
+      if (cancelled) return;
+
+      setPaymentSessionHint();
+      window.dispatchEvent(
+        new CustomEvent('periodpal:inbox-message', {
+          detail: {
+            title: 'Payment confirmed — thank you for your support.',
+            link: '/donations'
+          }
+        })
+      );
+      window.dispatchEvent(new Event('periodpal:donations-updated'));
+      window.dispatchEvent(new Event('periodpal:notifications-refresh'));
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
   }, [sessionId, orderId]);
 
   return (
@@ -39,6 +65,12 @@ export function PaymentSuccess() {
         Thank you
       </h1>
       <p className="text-ink-muted max-w-md mb-6 leading-relaxed">
+        {sessionId && verifyStatus === 'verifying' && (
+          <span className="block mb-2">Confirming your payment with the server…</span>
+        )}
+        {sessionId && verifyStatus && verifyStatus !== 'verifying' && verifyStatus !== 'ok' && (
+          <span className="block mb-2 text-amber-800 text-sm">{verifyStatus}</span>
+        )}
         Your donation order was received
         {demo ? ' (demo payment)' : ''}. A confirmation email may follow if mail
         is configured on the server.

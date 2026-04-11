@@ -32,6 +32,94 @@ function orderUserIdClause(userIdRaw) {
   return { userId: { $in: [str, oid] } };
 }
 
+/** Strip trailing slashes so `${origin}/payment-success` never becomes `//payment-success`. */
+function normalizeClientOrigin(raw) {
+  return String(raw || "")
+    .trim()
+    .replace(/\/+$/, "");
+}
+
+/**
+ * Apply paid status, stock, cart, email from a Stripe Checkout Session (webhook or verify).
+ * Idempotent when order is already PAID.
+ */
+async function fulfillStripeCheckoutSession(session) {
+  if (session.payment_status !== "paid") {
+    return {
+      ok: false,
+      reason: "not_paid",
+      payment_status: session.payment_status,
+    };
+  }
+
+  const orderId = session.metadata?.orderId;
+  if (!orderId) {
+    return { ok: false, reason: "no_order_id" };
+  }
+
+  const order = await Order.findById(orderId).populate("items.productId");
+  if (!order) {
+    return { ok: false, reason: "order_not_found" };
+  }
+
+  if (order.orderStatus === "PAID") {
+    return { ok: true, alreadyPaid: true, order };
+  }
+
+  for (const item of order.items) {
+    const productDoc = item.productId;
+    if (!productDoc) continue;
+
+    if (productDoc.stockQty < item.qty) {
+      console.log("Stock not enough for", productDoc.name);
+      continue;
+    }
+
+    productDoc.stockQty -= item.qty;
+    await productDoc.save();
+  }
+
+  order.orderStatus = "PAID";
+  order.payment = {
+    status: "PAID",
+    method: "STRIPE",
+    transactionId: session.payment_intent || session.id,
+  };
+  await order.save();
+
+  await Cart.updateOne(
+    { userId: order.userId, status: "ACTIVE" },
+    { $set: { status: "CHECKED_OUT" } }
+  );
+
+  const email = order.contactInfo?.email;
+  if (email) {
+    const itemsHtml = order.items
+      .map((i) => {
+        const p = i.productId;
+        return `<li>${p?.name || "Item"} — Qty: ${i.qty} — $${i.priceAtTime}</li>`;
+      })
+      .join("");
+
+    const html = `
+            <h2>PeriodPal Payment Successful ✅</h2>
+            <p><b>Order ID:</b> ${order._id}</p>
+            <ul>${itemsHtml}</ul>
+            <p><b>Total:</b> $${order.total}</p>
+            <p>Status: <b>PAID</b></p>
+            <p>Thank you 💜</p>
+          `;
+
+    try {
+      await sendEmail(email, "PeriodPal Payment Confirmation", html);
+    } catch (e) {
+      console.log("Email failed:", e.message);
+    }
+  }
+
+  return { ok: true, order };
+}
+
 // POST /api/orders/checkout
 exports.checkout = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
@@ -554,7 +642,9 @@ exports.createStripePayment = asyncHandler(async (req, res) => {
     };
   });
 
-  const clientOrigin = (process.env.CLIENT_URL || process.env.FRONTEND_URL || "").trim();
+  const clientOrigin = normalizeClientOrigin(
+    process.env.CLIENT_URL || process.env.FRONTEND_URL || ""
+  );
   if (!clientOrigin) {
     return res.status(500).json({
       success: false,
@@ -588,6 +678,52 @@ exports.createStripePayment = asyncHandler(async (req, res) => {
   res.json({ success: true, url: session.url, sessionId: session.id });
 });
 
+// GET /api/orders/verify-stripe-session?session_id=cs_...
+// Public: success redirect must be able to finalize payment if webhook is delayed or misconfigured.
+exports.verifyStripeSession = asyncHandler(async (req, res) => {
+  const session_id = req.query.session_id;
+  if (!session_id || String(session_id).trim() === "") {
+    return res.status(400).json({ success: false, message: "session_id is required" });
+  }
+
+  let session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(String(session_id).trim());
+  } catch (e) {
+    return res.status(400).json({
+      success: false,
+      message: "Could not retrieve Stripe session",
+      error: e.message,
+    });
+  }
+
+  const result = await fulfillStripeCheckoutSession(session);
+
+  if (!result.ok) {
+    if (result.reason === "not_paid") {
+      return res.status(400).json({
+        success: false,
+        message: "Payment not completed yet",
+        payment_status: result.payment_status,
+      });
+    }
+    if (result.reason === "no_order_id") {
+      return res.status(400).json({ success: false, message: "Order ID missing in session metadata" });
+    }
+    if (result.reason === "order_not_found") {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+    return res.status(500).json({ success: false, message: "Verification failed" });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: result.alreadyPaid
+      ? "Payment was already recorded"
+      : "Payment verified successfully",
+    order: result.order,
+  });
+});
 
 // POST /api/orders/webhook/stripe
 exports.stripeWebhook = async (req, res) => {
@@ -607,71 +743,9 @@ exports.stripeWebhook = async (req, res) => {
   try {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
-      const orderId = session.metadata?.orderId;
-
-      if (!orderId) {
+      const result = await fulfillStripeCheckoutSession(session);
+      if (!result.ok && result.reason === "no_order_id") {
         console.log("No orderId in metadata");
-        return res.json({ received: true });
-      }
-
-      const order = await Order.findById(orderId).populate("items.productId");
-      if (!order) return res.json({ received: true });
-
-      if (order.orderStatus !== "PAID") {
-        // ✅ reduce stock
-        for (const item of order.items) {
-          const productDoc = item.productId;
-          if (!productDoc) continue;
-
-          if (productDoc.stockQty < item.qty) {
-            console.log("Stock not enough for", productDoc.name);
-            continue;
-          }
-
-          productDoc.stockQty -= item.qty;
-          await productDoc.save();
-        }
-
-        // ✅ update order paid
-        order.orderStatus = "PAID";
-        order.payment = {
-          status: "PAID",
-          method: "STRIPE",
-          transactionId: session.payment_intent || session.id,
-        };
-        await order.save();
-
-        // ✅ close cart (if you want)
-        await Cart.updateOne(
-          { userId: order.userId, status: "ACTIVE" },
-          { $set: { status: "CHECKED_OUT" } }
-        );
-
-        // ✅ email receipt (if email exists)
-        const email = order.contactInfo?.email;
-        if (email) {
-          const itemsHtml = order.items
-            .map((i) => {
-              const p = i.productId;
-              return `<li>${p?.name || "Item"} — Qty: ${i.qty} — $${i.priceAtTime}</li>`;
-            })
-            .join("");
-
-          const html = `
-            <h2>PeriodPal Payment Successful ✅</h2>
-            <p><b>Order ID:</b> ${order._id}</p>
-            <ul>${itemsHtml}</ul>
-            <p><b>Total:</b> $${order.total}</p>
-            <p>Status: <b>PAID</b></p>
-            <p>Thank you 💜</p>
-          `;
-
-          try {
-            await sendEmail(email, "PeriodPal Payment Confirmation", html);
-          } catch (e) {
-            console.log("Email failed:", e.message);
-          }
-        }
       }
     }
 
