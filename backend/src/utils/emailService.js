@@ -9,6 +9,8 @@ const smtpTransport = {
     pass: process.env.EMAIL_PASS,
   },
   family: 4,
+  connectionTimeout: 20000,
+  socketTimeout: 20000,
   tls: {
     rejectUnauthorized: false,
   },
