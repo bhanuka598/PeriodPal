@@ -2,22 +2,29 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { ProtectedRoute } from '../components/ProtectedRoute';
+
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
 import { Dashboard } from '../pages/Dashboard';
-import  MenstrualRecord  from '../pages/menstrualRecord/menstrualRecord';
+import MenstrualRecord from '../pages/menstrualRecord/menstrualRecord';
 import { Inventory } from '../pages/Inventory';
 import { Donations } from '../pages/Donations';
 import { UsersManagement } from '../pages/UsersManagement';
+import { PaymentSuccess } from '../pages/PaymentSuccess';
+import { PaymentCancel } from '../pages/PaymentCancel';
 
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Public auth routes */}
+      {/* Public routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Protected system routes */}
+      {/* Stripe routes */}
+      <Route path="/payment-success" element={<PaymentSuccess />} />
+      <Route path="/payment-cancel" element={<PaymentCancel />} />
+
+      {/* Protected routes with layout */}
       <Route
         element={
           <ProtectedRoute>
@@ -64,7 +71,8 @@ export function AppRoutes() {
         />
       </Route>
 
-      {/* Catch-all */}
+      {/* Default routes */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
