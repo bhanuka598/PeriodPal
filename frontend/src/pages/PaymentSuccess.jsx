@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { HeartHandshake } from 'lucide-react';
+import { setPaymentSessionHint } from '../utils/notificationPrefs';
 
 export function PaymentSuccess() {
   const [params] = useSearchParams();
@@ -9,7 +10,17 @@ export function PaymentSuccess() {
   const demo = params.get('demo');
 
   useEffect(() => {
+    setPaymentSessionHint();
+    window.dispatchEvent(
+      new CustomEvent('periodpal:inbox-message', {
+        detail: {
+          title: 'Payment confirmed — thank you for your support.',
+          link: '/donations'
+        }
+      })
+    );
     window.dispatchEvent(new Event('periodpal:donations-updated'));
+    window.dispatchEvent(new Event('periodpal:notifications-refresh'));
   }, []);
 
   return (

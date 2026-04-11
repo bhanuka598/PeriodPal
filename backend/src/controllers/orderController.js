@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Cart = require("../models/Cart");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const User = require("../models/User");
 const asyncHandler = require("../utils/asyncHandler");
 const sendEmail = require("../utils/sendEmail");
 const Stripe = require("stripe");
@@ -170,7 +171,46 @@ function orderTime(o) {
 }
 
 function sumOrderUnits(o) {
-  return o.items.reduce((s, i) => s + (Number(i.qty) || 0), 0);
+  return (o.items || []).reduce((s, i) => s + (Number(i.qty) || 0), 0);
+}
+
+function adminDonationRowFromOrder(o, donorDisplay) {
+  const shortId = o._id.toString().slice(-6).toUpperCase();
+  const isPaid = o.orderStatus === "PAID";
+  const itemSummary = (o.items || [])
+    .map((i) => {
+      const p = i.productId;
+      const name = p?.name || "Product";
+      return `${Number(i.qty) || 0}× ${name}`;
+    })
+    .join(", ");
+  let status = "Pending";
+  if (isPaid) status = "Completed";
+  else if (o.orderStatus === "FAILED" || o.payment?.status === "FAILED") status = "Failed";
+  return {
+    id: `DON-${shortId}`,
+    orderId: String(o._id),
+    donor: donorDisplay,
+    type: "Product",
+    contribution: itemSummary || `Order ${shortId}`,
+    amount: Number(o.total) || 0,
+    units: sumOrderUnits(o),
+    date: new Date(o.updatedAt || o.createdAt).toISOString(),
+    status,
+  };
+}
+
+function donorDisplayForOrder(o, userById) {
+  const uid = String(o.userId ?? "");
+  if (mongoose.isValidObjectId(uid)) {
+    const u = userById.get(uid);
+    if (u) return u.username || u.email || "Donor";
+  }
+  const c = o.contactInfo || {};
+  const name = [c.firstName, c.lastName].filter(Boolean).join(" ").trim();
+  if (name) return name;
+  if (c.email) return c.email;
+  return "Guest";
 }
 
 function pctTrend(current, previous) {
@@ -190,6 +230,35 @@ function diffTrend(current, previous) {
 
 function impactFromTotals(totalMoney, units) {
   return Math.min(100, Math.round(20 + totalMoney / 100 + units / 5));
+}
+
+/** Group paid orders by calendar month (UTC) for donor reports. */
+function buildMonthlyBreakdown(paidOrders) {
+  const map = new Map();
+  for (const o of paidOrders) {
+    const t = orderTime(o);
+    const d = new Date(t);
+    const y = d.getUTCFullYear();
+    const m = d.getUTCMonth() + 1;
+    const period = `${y}-${String(m).padStart(2, "0")}`;
+    if (!map.has(period)) {
+      map.set(period, { period, totalAmount: 0, units: 0, orderCount: 0 });
+    }
+    const row = map.get(period);
+    row.totalAmount += Number(o.total) || 0;
+    row.units += sumOrderUnits(o);
+    row.orderCount += 1;
+  }
+  return Array.from(map.values())
+    .sort((a, b) => b.period.localeCompare(a.period))
+    .map((row) => ({
+      ...row,
+      label: new Date(`${row.period}-01T12:00:00.000Z`).toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      }),
+    }));
 }
 
 // GET /api/orders/donor-summary (+ aliases /api/me/donations, /api/users/me/donations)
@@ -258,6 +327,8 @@ exports.getMyDonationData = asyncHandler(async (req, res) => {
     dailyTotals.push({ date: key, total: dailyMap[key] || 0 });
   }
 
+  const monthlyBreakdown = buildMonthlyBreakdown(paid);
+
   const rows = orders.map((o) => {
     const shortId = o._id.toString().slice(-6).toUpperCase();
     const isPaid = o.orderStatus === "PAID";
@@ -273,6 +344,20 @@ exports.getMyDonationData = asyncHandler(async (req, res) => {
     if (isPaid) status = "Completed";
     else if (o.orderStatus === "FAILED" || o.payment?.status === "FAILED") status = "Failed";
 
+    const lines = o.items.map((i) => {
+      const p = i.productId;
+      const qty = Number(i.qty) || 0;
+      const unit = Number(i.priceAtTime) || 0;
+      const desc = p?.description ? String(p.description).trim().slice(0, 200) : "";
+      return {
+        productName: p?.name || "Product",
+        description: desc,
+        qty,
+        unitPrice: unit,
+        lineTotal: Math.round(qty * unit * 100) / 100,
+      };
+    });
+
     return {
       id: `DON-${shortId}`,
       orderId: String(o._id),
@@ -282,6 +367,7 @@ exports.getMyDonationData = asyncHandler(async (req, res) => {
       units: sumOrderUnits(o),
       date: new Date(o.updatedAt || o.createdAt).toISOString(),
       status,
+      lines,
     };
   });
 
@@ -303,24 +389,56 @@ exports.getMyDonationData = asyncHandler(async (req, res) => {
       },
     },
     dailyTotals,
+    monthlyBreakdown,
     orders: rows,
   });
 });
 
-// GET /api/orders/admin/stats — admin: units purchased across paid orders
+// GET /api/orders/admin/stats — admin: aggregates + recent donation rows (paid order checkouts)
 exports.getAdminDonationStats = asyncHandler(async (req, res) => {
-  const paidOrders = await Order.find({ orderStatus: "PAID" }).select("items");
+  const paidOrders = await Order.find({ orderStatus: "PAID" })
+    .select("items total userId")
+    .lean();
+
   let unitsPurchased = 0;
+  let totalFundsRaised = 0;
+  const donorKeys = new Set();
   for (const o of paidOrders) {
-    unitsPurchased += o.items.reduce(
-      (sum, i) => sum + (Number(i.qty) || 0),
-      0
-    );
+    totalFundsRaised += Number(o.total) || 0;
+    for (const i of o.items || []) {
+      unitsPurchased += Number(i.qty) || 0;
+    }
+    donorKeys.add(String(o.userId));
   }
+
+  const recentOrders = await Order.find({})
+    .populate("items.productId")
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .lean();
+
+  const oidStrings = new Set();
+  for (const o of recentOrders) {
+    const s = String(o.userId ?? "");
+    if (mongoose.isValidObjectId(s)) oidStrings.add(s);
+  }
+  const objectIds = [...oidStrings].map((id) => new mongoose.Types.ObjectId(id));
+  const users = objectIds.length
+    ? await User.find({ _id: { $in: objectIds } }).select("username email").lean()
+    : [];
+  const userById = new Map(users.map((u) => [String(u._id), u]));
+
+  const recentDonations = recentOrders.map((o) =>
+    adminDonationRowFromOrder(o, donorDisplayForOrder(o, userById))
+  );
+
   res.json({
     success: true,
     paidOrdersCount: paidOrders.length,
     unitsPurchased,
+    totalFundsRaised,
+    uniqueDonorsCount: donorKeys.size,
+    recentDonations,
   });
 });
 

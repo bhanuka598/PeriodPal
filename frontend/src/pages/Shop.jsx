@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PackageIcon, ShoppingBag, SparklesIcon } from 'lucide-react';
 import { getAllProducts } from '../api/productApi';
 import { addToCart } from '../api/cartApi';
 import { resolveProductImageUrl } from '../utils/productImage';
+import { useAuth } from '../context/AuthContext';
+import { markCatalogSeenWithLatestProduct } from '../utils/notificationPrefs';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 24 },
@@ -15,12 +18,67 @@ const fadeInUp = {
   }
 };
 
+//animation for the cart fly particle
+function CartFlyParticle({ payload, onDone }) {
+  const cx0 = payload.from.left + payload.from.width / 2;
+  const cy0 = payload.from.top + payload.from.height / 2;
+  const cx1 = payload.to.left + payload.to.width / 2;
+  const cy1 = payload.to.top + payload.to.height / 2;
+  const dx = cx1 - cx0;
+  const dy = cy1 - cy0;
+  const size = 52;
+
+  return createPortal(
+    <motion.img
+      alt=""
+      src={payload.src}
+      className="rounded-lg shadow-lg object-cover pointer-events-none border-2 border-white ring-2 ring-coral/30"
+      style={{
+        position: 'fixed',
+        left: cx0 - size / 2,
+        top: cy0 - size / 2,
+        width: size,
+        height: size,
+        zIndex: 10050
+      }}
+      initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+      animate={{
+        x: [0, dx * 0.45, dx],
+        y: [0, dy * 0.35 - Math.min(72, Math.abs(dx) * 0.15), dy],
+        scale: [1, 0.85, 0.2],
+        opacity: [1, 1, 0.15]
+      }}
+      transition={{
+        duration: 0.72,
+        times: [0, 0.45, 1],
+        ease: [0.22, 1, 0.36, 1]
+      }}
+      onAnimationComplete={onDone}
+    />,
+    document.body
+  );
+}
+
 export function Shop() {
+  const { user } = useAuth();
+  const { catalogSearch } = useOutletContext() || {};
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [addingId, setAddingId] = useState(null);
   const [toast, setToast] = useState('');
+  const [flyPayload, setFlyPayload] = useState(null);
+
+  const filteredProducts = useMemo(() => {
+    const q = (catalogSearch || '').trim().toLowerCase();
+    if (!q) return products;
+    return products.filter((p) => {
+      const hay = [p.name, p.description, p.category]
+        .map((x) => String(x || '').toLowerCase())
+        .join(' ');
+      return hay.includes(q);
+    });
+  }, [products, catalogSearch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,7 +87,14 @@ export function Shop() {
         setLoading(true);
         setError('');
         const { data } = await getAllProducts();
-        if (!cancelled) setProducts(data.products || []);
+        const list = data.products || [];
+        if (!cancelled) {
+          setProducts(list);
+          if (user?._id) {
+            markCatalogSeenWithLatestProduct(user._id, list);
+            window.dispatchEvent(new Event('periodpal:notifications-refresh'));
+          }
+        }
       } catch (e) {
         if (!cancelled) setError('Could not load products. Is the API running?');
       } finally {
@@ -39,7 +104,7 @@ export function Shop() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [user?._id]);
 
   useEffect(() => {
     if (!toast) return;
@@ -47,13 +112,28 @@ export function Shop() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const handleAdd = async (product) => {
+  const handleAdd = async (product, event) => {
     if (product.stockQty < 1) return;
+    const article = event?.currentTarget?.closest('article');
+    const imgEl = article?.querySelector('img');
+    const cartEl = document.querySelector('[data-periodpal-cart-target]');
+    let snapshot = null;
+    if (imgEl && cartEl) {
+      snapshot = {
+        from: imgEl.getBoundingClientRect(),
+        to: cartEl.getBoundingClientRect(),
+        src: resolveProductImageUrl(product.imageUrl, 'small')
+      };
+    }
+
     setAddingId(product._id);
     try {
       await addToCart(product._id, 1);
       setToast(`${product.name} added to your cart.`);
       window.dispatchEvent(new Event('periodpal:cart-updated'));
+      if (snapshot) {
+        setFlyPayload({ key: `${product._id}-${Date.now()}`, ...snapshot });
+      }
     } catch (e) {
       setToast(e?.response?.data?.message || 'Could not add to cart.');
     } finally {
@@ -68,6 +148,17 @@ export function Shop() {
       exit={{ opacity: 0 }}
       className="w-full pb-24"
     >
+      {flyPayload && (
+        <CartFlyParticle
+          key={flyPayload.key}
+          payload={flyPayload}
+          onDone={() => {
+            setFlyPayload(null);
+            window.dispatchEvent(new Event('periodpal:cart-fly-end'));
+          }}
+        />
+      )}
+
       <section className="relative pt-10 pb-14 md:pt-16 md:pb-20 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div
@@ -89,21 +180,13 @@ export function Shop() {
               a real order—pay securely with Stripe or use the demo checkout for
               testing.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                to="/cart"
-                className="inline-flex items-center gap-2 bg-coral text-white px-6 py-3 rounded-full font-medium hover:bg-coral-dark transition-colors shadow-soft"
-              >
-                <ShoppingBag className="w-5 h-5" />
-                View cart
-              </Link>
-              <Link
-                to="/register"
-                className="inline-flex items-center gap-2 bg-white text-ink px-6 py-3 rounded-full font-medium border border-blush/50 hover:bg-cream-dark transition-colors shadow-sm"
-              >
-                Create an account
-              </Link>
-            </div>
+            <Link
+              to="/cart"
+              className="inline-flex items-center gap-2 bg-coral text-white px-6 py-3 rounded-full font-medium hover:bg-coral-dark transition-colors shadow-soft"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              View cart
+            </Link>
           </motion.div>
         </div>
         <div className="absolute top-20 right-0 w-72 h-72 bg-gradient-to-br from-blush/60 to-coral/10 rounded-full blur-3xl opacity-70 pointer-events-none" />
@@ -134,8 +217,22 @@ export function Shop() {
           </div>
         )}
 
+        {!loading &&
+          !error &&
+          products.length > 0 &&
+          filteredProducts.length === 0 && (
+            <div className="text-center py-12 mb-8 bg-white rounded-3xl shadow-soft border border-blush/20">
+              <p className="text-ink font-medium">
+                No products match &ldquo;{String(catalogSearch).trim()}&rdquo;.
+              </p>
+              <p className="text-ink-muted text-sm mt-2">
+                Try another word or clear the search in the header.
+              </p>
+            </div>
+          )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {products.map((product, i) => (
+          {filteredProducts.map((product, i) => (
             <motion.article
               key={product._id}
               initial={{ opacity: 0, y: 20 }}
@@ -172,7 +269,7 @@ export function Shop() {
                   <button
                     type="button"
                     disabled={product.stockQty < 1 || addingId === product._id}
-                    onClick={() => handleAdd(product)}
+                    onClick={(e) => handleAdd(product, e)}
                     className="shrink-0 bg-coral text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-coral-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {addingId === product._id ? 'Adding…' : 'Add to cart'}

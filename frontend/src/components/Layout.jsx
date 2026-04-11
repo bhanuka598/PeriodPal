@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 
 export function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState('');
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
@@ -14,10 +15,14 @@ export function Layout() {
       <Sidebar isOpen={isSidebarOpen} closeSidebar={closeSidebar} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Navbar toggleSidebar={toggleSidebar} />
+        <Navbar
+          toggleSidebar={toggleSidebar}
+          catalogSearch={catalogSearch}
+          setCatalogSearch={setCatalogSearch}
+        />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 custom-scrollbar relative">
-          <Outlet />
+          <Outlet context={{ catalogSearch, setCatalogSearch }} />
         </main>
       </div>
     </div>

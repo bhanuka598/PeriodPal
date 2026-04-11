@@ -25,6 +25,8 @@ import {
 import { resolveProductImageUrl } from '../utils/productImage';
 import { getAdminDonationStats } from '../api/orderApi';
 import { getApiErrorMessage, classNames } from '../utils/helpers';
+import { useAuth } from '../context/AuthContext';
+import { markCatalogSeenWithLatestProduct } from '../utils/notificationPrefs';
 
 const emptyForm = {
   name: '',
@@ -37,6 +39,7 @@ const emptyForm = {
 };
 
 export function AdminProducts() {
+  const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -67,7 +70,12 @@ export function AdminProducts() {
     try {
       setError('');
       const { data } = await getAllProducts();
-      setProducts(data.products || []);
+      const list = data.products || [];
+      setProducts(list);
+      if (user?._id) {
+        markCatalogSeenWithLatestProduct(user._id, list);
+        window.dispatchEvent(new Event('periodpal:notifications-refresh'));
+      }
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to load products.'));
     } finally {
