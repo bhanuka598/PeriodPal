@@ -30,30 +30,57 @@ function DonorOverviewChart({ dailyTotals, rangeDays }) {
   );
 
   const labelEvery = rangeDays <= 14 ? 1 : rangeDays <= 31 ? 5 : 30;
+  const mid = Math.round((max / 2) * 100) / 100;
 
   return (
-    <div className="flex h-56 w-full items-end gap-0.5 sm:gap-1 pt-4">
-      {dailyTotals.map((d, i) => {
-        const h = Math.round((d.total / max) * 100);
-        const showLabel = i % labelEvery === 0 || i === dailyTotals.length - 1;
-        return (
-          <div
-            key={d.date}
-            className="flex flex-1 flex-col items-center justify-end gap-1 min-w-0"
-            title={`${d.date}: ${formatCurrency(d.total)}`}
-          >
+    <div className="flex h-56 w-full gap-2 pt-2">
+      <div
+        className="flex shrink-0 flex-col justify-between py-0.5 text-right text-[9px] tabular-nums text-secondary-400 sm:text-[10px] w-11 sm:w-12"
+        aria-hidden
+      >
+        <span>{formatCurrency(max)}</span>
+        <span>{formatCurrency(mid)}</span>
+        <span>$0</span>
+      </div>
+      <div className="relative flex min-h-0 min-w-0 flex-1 gap-0.5 border-b border-secondary-200 sm:gap-1">
+        <div
+          className="pointer-events-none absolute inset-0 flex flex-col justify-between pb-6"
+          aria-hidden
+        >
+          <div className="border-t border-dashed border-secondary-200/80" />
+          <div className="border-t border-dashed border-secondary-200/80" />
+          <div />
+        </div>
+        {dailyTotals.map((d, i) => {
+          const hPct = Math.round((d.total / max) * 100);
+          const barPct = Math.max(hPct, d.total > 0 ? 6 : 0);
+          const showLabel = i % labelEvery === 0 || i === dailyTotals.length - 1;
+          return (
             <div
-              className="w-full max-w-[14px] mx-auto rounded-t bg-primary-400/90 hover:bg-primary-500 transition-colors"
-              style={{ height: `${Math.max(h, d.total > 0 ? 8 : 2)}%` }}
-            />
-            {showLabel && (
-              <span className="text-[9px] sm:text-[10px] text-secondary-400 truncate w-full text-center">
-                {d.date.slice(5)}
-              </span>
-            )}
-          </div>
-        );
-      })}
+              key={d.date}
+              className="relative z-[1] flex h-full min-h-0 min-w-0 flex-1 flex-col"
+              title={`${d.date}: ${formatCurrency(d.total)}`}
+            >
+              <div className="flex min-h-0 flex-1 flex-col justify-end pb-0">
+                <div
+                  className="mx-auto w-full max-w-[14px] rounded-t bg-primary-400/90 transition-colors hover:bg-primary-500"
+                  style={{
+                    height: `${barPct}%`,
+                    minHeight: d.total > 0 ? 6 : 3,
+                  }}
+                />
+              </div>
+              <div className="h-6 shrink-0 flex items-start justify-center pt-1">
+                {showLabel ? (
+                  <span className="w-full truncate text-center text-[9px] text-secondary-400 sm:text-[10px]">
+                    {d.date.slice(5)}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -672,7 +699,7 @@ export function Dashboard() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-secondary-900">
-          Welcome back, {user?.name?.split(' ')[0]} 👋
+          Welcome back, {user?.name?.split(' ')[0]}
         </h1>
         <p className="text-secondary-500 mt-1">
           Here's what's happening with your account today.
@@ -872,6 +899,72 @@ export function Dashboard() {
               </div>
             </div>
           )}
+        </motion.div>
+
+        {/* Sidebar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          className="space-y-6"
+        >
+          {/* Quick Actions */}
+          <div className="bg-white rounded-2xl shadow-sm border border-secondary-100 p-6">
+            <h2 className="text-lg font-bold text-secondary-900 mb-4">
+              Quick Actions
+            </h2>
+
+            <div className="space-y-3">
+              {user?.role === 'user' || user?.role === 'beneficiary' ? (
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white py-2.5 px-4 rounded-xl"
+                >
+                  <Plus className="h-4 w-4" />
+                  Log Period
+                </button>
+              ) : user?.role === 'ngo' ? (
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white py-2.5 px-4 rounded-xl"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Inventory
+                </button>
+              ) : (
+                <Link
+                  to="/shop"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white py-2.5 px-4 rounded-xl"
+                >
+                  <Plus className="h-4 w-4" />
+                  Make Donation
+                </Link>
+              )}
+
+              {user?.role === 'user' || user?.role === 'beneficiary' ? (
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-50 text-primary-700 py-2.5 px-4 rounded-xl"
+                >
+                  Request Products
+                </button>
+              ) : user?.role === 'donor' ? (
+                <Link
+                  to="/donations#donation-report"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-50 text-primary-700 py-2.5 px-4 rounded-xl"
+                >
+                  View Reports
+                </Link>
+              ) : (
+                <Link
+                  to="/donations"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-50 text-primary-700 py-2.5 px-4 rounded-xl"
+                >
+                  View Reports
+                </Link>
+              )}
+            </div>
+          </div>
         </motion.div>
       </div>
     </div>

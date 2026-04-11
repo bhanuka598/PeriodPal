@@ -59,6 +59,7 @@ export default function AddProduct() {
       console.log("Product added:", response.data);
 
       setMessage("Product added successfully!");
+      window.dispatchEvent(new Event("periodpal:notifications-refresh"));
 
       setFormData({
         name: "",
