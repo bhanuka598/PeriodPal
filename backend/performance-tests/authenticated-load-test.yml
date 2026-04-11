@@ -1,0 +1,46 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 15
+      name: "Sustained load"
+    - duration: 60
+      arrivalRate: 5
+      name: "Cool down"
+  processor: "./before-scenario.js"
+scenarios:
+  - name: "Authenticated User Flow"
+    flow:
+      # Login
+      - post:
+          url: "/api/users/login"
+          name: "User Login"
+          json:
+            email: "test@example.com"
+            password: "password123"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+          expect:
+            - statusCode: 200
+      
+      # Get user profile
+      - get:
+          url: "/api/users/profile"
+          name: "Get User Profile"
+          headers:
+            Authorization: "{{ $authToken }}"
+          expect:
+            - statusCode: 200
+      
+      # Get orders
+      - get:
+          url: "/api/orders"
+          name: "Get Orders"
+          headers:
+            Authorization: "{{ $authToken }}"
+          expect:
+            - statusCode: 200

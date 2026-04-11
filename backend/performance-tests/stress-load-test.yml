@@ -1,0 +1,46 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 60
+      arrivalRate: 50
+      name: "Initial load"
+    - duration: 120
+      arrivalRate: 100
+      name: "High load"
+    - duration: 60
+      arrivalRate: 200
+      name: "Peak stress"
+    - duration: 60
+      arrivalRate: 50
+      name: "Recovery"
+  processor: "./before-scenario.js"
+scenarios:
+  - name: "High Volume Public API"
+    flow:
+      # Health check
+      - get:
+          url: "/"
+          name: "Health Check"
+          expect:
+            - statusCode: 200
+      
+      # Get all products
+      - get:
+          url: "/api/products"
+          name: "Get All Products"
+          expect:
+            - statusCode: 200
+      
+      # Get single product
+      - get:
+          url: "/api/products/507f1f77bcf86cd799439011"
+          name: "Get Single Product"
+          expect:
+            - statusCode: 200
+      
+      # Get all orders
+      - get:
+          url: "/api/orders"
+          name: "Get All Orders"
+          expect:
+            - statusCode: 200

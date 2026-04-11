@@ -1,0 +1,36 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 30
+      arrivalRate: 10
+      name: "Normal traffic"
+    - duration: 30
+      arrivalRate: 500
+      name: "Spike"
+    - duration: 60
+      arrivalRate: 10
+      name: "Recovery"
+  processor: "./before-scenario.js"
+scenarios:
+  - name: "Spike Test - Public Endpoints"
+    flow:
+      # Health check
+      - get:
+          url: "/"
+          name: "Health Check"
+          expect:
+            - statusCode: 200
+      
+      # Get all products
+      - get:
+          url: "/api/products"
+          name: "Get All Products"
+          expect:
+            - statusCode: 200
+      
+      # Get single product
+      - get:
+          url: "/api/products/507f1f77bcf86cd799439011"
+          name: "Get Single Product"
+          expect:
+            - statusCode: 200
